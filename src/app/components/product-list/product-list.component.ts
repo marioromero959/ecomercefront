@@ -6,6 +6,7 @@ import { CartService } from '../../services/cart.service';
 import { AuthService } from '../../services/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Product, Category } from '../../models/interfaces';
+import { signal, WritableSignal } from '@angular/core';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatIcon } from '@angular/material/icon';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
@@ -308,10 +309,18 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
   `]
 })
 export class ProductListComponent implements OnInit {
-  products: Product[] = [];
-  categories: Category[] = [];
+  // Signals
+  private productsSignal: WritableSignal<Product[]> = signal<Product[]>([]);
+  private categoriesSignal: WritableSignal<Category[]> = signal<Category[]>([]);
+  private selectedCategorySignal: WritableSignal<string> = signal('');
+
+  // expose legacy properties (template expects plain properties/syntax)
+  get products(): Product[] { return this.productsSignal(); }
+  get categories(): Category[] { return this.categoriesSignal(); }
+  get selectedCategory(): string { return this.selectedCategorySignal(); }
+  set selectedCategory(v: string) { this.selectedCategorySignal.set(v); }
+
   searchTerm = new FormControl('');
-  selectedCategory = '';
   currentPage = 1;
   pageSize = 12;
   totalProducts = 0;
@@ -330,11 +339,22 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCategories();
+    // read query params and initialize signals
     this.route.queryParams.subscribe(params => {
-      this.selectedCategory = params['category'] || '';
-      this.searchTerm = params['search'] || '';
+      this.selectedCategorySignal.set(params['category'] || '');
+      const search = params['search'] || '';
       this.currentPage = parseInt(params['page']) || 1;
+      this.searchTerm.setValue(search, { emitEvent: false });
       this.loadProducts();
+    });
+
+    // debounce search and trigger filters
+    let searchDebounceTimer: any = null;
+    this.searchTerm.valueChanges.subscribe(val => {
+      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        this.applyFilters();
+      }, 300);
     });
   }
 
@@ -345,7 +365,7 @@ export class ProductListComponent implements OnInit {
   loadCategories(): void {
     this.categoryService.getCategories().subscribe({
       next: (response) => {
-        this.categories = response.categories;
+        this.categoriesSignal.set(response.categories);
       },
       error: (error) => {
         console.error('Error loading categories:', error);
@@ -358,13 +378,13 @@ export class ProductListComponent implements OnInit {
     const filters = {
       page: this.currentPage,
       limit: this.pageSize,
-      ...(this.selectedCategory && { category: parseInt(this.selectedCategory) }),
+      ...(this.selectedCategorySignal() && { category: parseInt(this.selectedCategorySignal()) }),
       ...(this.searchTerm.value && { search: this.searchTerm.value })
     };
 
     this.productService.getProducts(filters).subscribe({
       next: (response: ProductsResponse) => {
-        this.products = response.products;
+        this.productsSignal.set(response.products);
         this.totalProducts = response.totalProducts;
         this.totalPages = response.totalPages;
         this.loading = false;

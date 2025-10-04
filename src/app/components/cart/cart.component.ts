@@ -20,7 +20,7 @@ import { MatFormField, MatLabel, MatSelect } from '@angular/material/select';
     <div class="cart-container">
       <div class="cart-header">
         <h1>Mi Carrito de Compras</h1>
-        <button mat-button routerLink="/products" class="continue-shopping">
+        <button mat-flat-button color="primary" routerLink="/products" class="continue-shopping">
           <mat-icon>arrow_back</mat-icon>
           Continuar Comprando
         </button>
@@ -97,15 +97,12 @@ import { MatFormField, MatLabel, MatSelect } from '@angular/material/select';
             </mat-card-content>
             
             <mat-card-actions>
-              <button mat-raised-button color="primary" 
-                      class="checkout-button" 
-                      (click)="proceedToCheckout()"
-                      [disabled]="cartItems.length === 0">
+              <button mat-flat-button color="primary" class="checkout-button" (click)="proceedToCheckout()" [disabled]="cartItems.length === 0">
                 <mat-icon>payment</mat-icon>
                 Proceder al Pago
               </button>
-              
-              <button mat-button color="warn" (click)="clearCart()" class="clear-cart-button">
+
+              <button mat-stroked-button color="warn" (click)="clearCart()" class="clear-cart-button">
                 <mat-icon>clear_all</mat-icon>
                 Vaciar Carrito
               </button>
@@ -119,10 +116,10 @@ import { MatFormField, MatLabel, MatSelect } from '@angular/material/select';
       <mat-icon class="empty-cart-icon">shopping_cart</mat-icon>
       <h2>Tu carrito está vacío</h2>
       <p>Agrega algunos productos para comenzar a comprar</p>
-      <button mat-raised-button color="primary" routerLink="/products">
-      <mat-icon>store</mat-icon>
-      Explorar Productos
-      </button>
+  <button mat-flat-button color="primary" routerLink="/products">
+  <mat-icon>store</mat-icon>
+  Explorar Productos
+  </button>
       </div>
       </div>
       }
@@ -292,6 +289,7 @@ export class CartComponent implements OnInit {
   cartItems: CartItem[] = [];
   cartTotal = 0;
   loading = false;
+  cartItemCount = 0;
 
   constructor(
     private cartService: CartService,
@@ -303,6 +301,10 @@ export class CartComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCart();
+    // Mantener sincronizado el contador del servicio para actualizar badges
+    this.cartService.cartItemCount$.subscribe(count => {
+      this.cartItemCount = count;
+    });
   }
 
   loadCart(): void {

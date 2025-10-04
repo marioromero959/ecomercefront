@@ -57,8 +57,8 @@ interface DialogData {
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
-      <button mat-button (click)="onCancel()">Cancelar</button>
-      <button mat-raised-button color="primary" 
+      <button mat-stroked-button (click)="onCancel()">Cancelar</button>
+      <button mat-flat-button color="primary" 
               [disabled]="categoryForm.invalid || loading" 
               (click)="onSave()">
         <ng-container *ngIf="loading">

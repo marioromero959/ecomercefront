@@ -15,10 +15,10 @@ import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle } 
     <div class="admin-categories">
       <div class="section-header">
         <h2>Gestión de Categorías</h2>
-        <button mat-raised-button color="primary" (click)="openCategoryDialog()">
-          <mat-icon>add</mat-icon>
-          Nueva Categoría
-        </button>
+          <button mat-flat-button color="primary" (click)="openCategoryDialog()">
+            <mat-icon>add</mat-icon>
+            Nueva Categoría
+          </button>
       </div>
 
       <div class="categories-grid">
@@ -37,14 +37,8 @@ import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle } 
           </mat-card-content>
           
           <mat-card-actions>
-            <button mat-button color="primary" (click)="editCategory(category)">
-              <mat-icon>edit</mat-icon>
-              Editar
-            </button>
-            <button mat-button color="warn" (click)="deleteCategory(category)">
-              <mat-icon>delete</mat-icon>
-              Eliminar
-            </button>
+              <button mat-stroked-button color="primary" (click)="editCategory(category)"><mat-icon>edit</mat-icon></button>
+              <button mat-stroked-button color="warn" (click)="deleteCategory(category)"><mat-icon>delete</mat-icon></button>
           </mat-card-actions>
         </mat-card>
         }

@@ -45,7 +45,7 @@ import { MatButtonModule } from '@angular/material/button';
           <!-- Cart: muestra solo si hay usuario autenticado -->
           <ng-container *ngIf="currentUser$ | async as currentUser">
             <button mat-icon-button routerLink="/cart">
-              <mat-icon [matBadge]="cartItemCount" matBadgeColor="warn">shopping_cart</mat-icon>
+              <mat-icon [matBadge]="cartItemCount" matBadgeColor="warn" [matBadgeHidden]="cartItemCount === 0">shopping_cart</mat-icon>
             </button>
 
             <!-- User Menu -->
@@ -61,7 +61,7 @@ import { MatButtonModule } from '@angular/material/button';
               </button>
               <button mat-menu-item routerLink="/change-password">
                 <mat-icon>lock_reset</mat-icon>
-                Cambiar Contrase1a
+                Cambiar Contraseña
               </button>
               <ng-container *ngIf="currentUser.role === 'admin'">
                 <button mat-menu-item routerLink="/admin">
@@ -72,7 +72,7 @@ import { MatButtonModule } from '@angular/material/button';
               <mat-divider></mat-divider>
               <button mat-menu-item (click)="logout()">
                 <mat-icon>logout</mat-icon>
-                Cerrar Sesi3n
+                Cerrar Sesión
               </button>
             </mat-menu>
           </ng-container>
@@ -151,8 +151,8 @@ export class HeaderComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.cartService.cartItems$.subscribe(items => {
-      this.cartItemCount = items.reduce((count, item) => count + item.quantity, 0);
+    this.cartService.cartItemCount$.subscribe(count => {
+      this.cartItemCount = count;
     });
 
     // Load cart if user is authenticated
