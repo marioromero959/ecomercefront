@@ -5,16 +5,34 @@ import { ProductService } from '../../../services/product.service';
 import { CategoryService } from '../../../services/category.service';
 import { Product, Category } from '../../../models/interfaces';
 import { ProductFormDialogComponent } from '../product-form-dialog/product-form-dialog.component';
+import { CommonModule } from '@angular/common';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatIcon } from '@angular/material/icon';
-import { MatChip } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
-import { MatCard } from '@angular/material/card';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 
 @Component({
   selector: 'app-admin-products',
-  standalone:true,
-  imports: [MatPaginatorModule,MatIcon,MatChip,MatTableModule,MatCard,MatIcon],
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatPaginatorModule,
+    MatIconModule,
+    MatChipsModule,
+    MatTableModule,
+    MatCardModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatTooltipModule,
+    MatMenuModule
+  ],
   template: `
     <div class="admin-products">
       <div class="section-header">

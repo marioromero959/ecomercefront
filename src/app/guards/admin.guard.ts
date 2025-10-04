@@ -10,7 +10,7 @@ export const adminGuard: CanActivateFn = (route, state) => {
     console.log("es admin")
     return true;
   } else {
-    // router.navigate(['/']);
-    return false;
+    router.navigate(['/']);
+    return true;
   }
 };

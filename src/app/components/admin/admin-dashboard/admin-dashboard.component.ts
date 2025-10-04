@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import { User } from '../../../models/interfaces';
-import { RouterOutlet } from '@angular/router';
+import { RouterModule, RouterOutlet } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
-import { MatListItem, MatNavList } from '@angular/material/list';
+import { MatListItem, MatListModule, MatNavList } from '@angular/material/list';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone:true,
-  imports: [RouterOutlet,MatIcon,MatListItem,MatNavList],
+  imports: [RouterOutlet,MatIcon,MatListItem,MatNavList, MatListModule,RouterModule ],
   template: `
     <div class="admin-dashboard">
       <!-- Admin Header -->

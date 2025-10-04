@@ -110,8 +110,10 @@ import { MatButton } from '@angular/material/button';
               @if(loading) {
                 <mat-spinner diameter="20"></mat-spinner>
               } @else {
+                <ng-container>
                 <mat-icon>lock_reset</mat-icon>
                 <span>Cambiar Contraseña</span>
+                </ng-container>
               }
             </button>
           </form>

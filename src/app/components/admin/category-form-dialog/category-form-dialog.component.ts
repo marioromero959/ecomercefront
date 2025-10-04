@@ -1,21 +1,36 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialogActions, MatDialogContent } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CategoryService } from '../../../services/category.service';
 import { Category } from '../../../models/interfaces';
+import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatError, MatFormField, MatLabel } from '@angular/material/select';
-import { MatIcon } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
 
 interface DialogData {
   category: Category | null;
 }
 
 @Component({
-  standalone:true,
-  imports: [MatProgressSpinnerModule,MatDialogActions,MatLabel,MatFormField,ReactiveFormsModule,MatError,MatDialogContent],
   selector: 'app-category-form-dialog',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    MatIconModule,
+    MatDividerModule
+  ],
   template: `
     <h2 mat-dialog-title>{{data.category ? 'Editar' : 'Nueva'}} Categoría</h2>
     
@@ -24,31 +39,34 @@ interface DialogData {
         <mat-form-field class="full-width">
           <mat-label>Nombre de la Categoría</mat-label>
           <input matInput formControlName="name" required>
-          @if(categoryForm.get('name')?.hasError('required')){
-            <mat-error>
+          <mat-error *ngIf="categoryForm.get('name')?.hasError('required')">
             El nombre es requerido
-            </mat-error>
-          }
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field class="full-width">
           <mat-label>Descripción (Opcional)</mat-label>
           <textarea matInput rows="4" formControlName="description"></textarea>
         </mat-form-field>
+
+        <mat-form-field class="full-width">
+          <mat-label>URL de Imagen (Opcional)</mat-label>
+          <input matInput formControlName="image" placeholder="https://...">
+        </mat-form-field>
       </form>
     </mat-dialog-content>
-    
+
     <mat-dialog-actions align="end">
       <button mat-button (click)="onCancel()">Cancelar</button>
       <button mat-raised-button color="primary" 
               [disabled]="categoryForm.invalid || loading" 
               (click)="onSave()">
-        @if(loading){
+        <ng-container *ngIf="loading">
           <mat-spinner diameter="20"></mat-spinner>
-        }
-        @if(!loading){
+        </ng-container>
+        <ng-container *ngIf="!loading">
           <span>{{data.category ? 'Actualizar' : 'Crear'}}</span>
-        }
+        </ng-container>
       </button>
     </mat-dialog-actions>
   `,
@@ -76,7 +94,8 @@ export class CategoryFormDialogComponent implements OnInit {
   ) {
     this.categoryForm = this.fb.group({
       name: ['', [Validators.required]],
-      description: ['']
+      description: [''],
+      image: ['']
     });
   }
 
@@ -84,7 +103,8 @@ export class CategoryFormDialogComponent implements OnInit {
     if (this.data.category) {
       this.categoryForm.patchValue({
         name: this.data.category.name,
-        description: this.data.category.description || ''
+        description: this.data.category.description || '',
+        image: this.data.category.image || ''
       });
     }
   }

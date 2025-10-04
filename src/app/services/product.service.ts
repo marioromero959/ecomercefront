@@ -43,11 +43,12 @@ export class ProductService {
     return this.http.get<{ product: Product }>(`${this.API_URL}/${id}`);
   }
 
-  createProduct(productData: FormData): Observable<{ product: Product; message: string }> {
+  // Accept a plain object (JSON) payload or FormData if necessary.
+  createProduct(productData: any): Observable<{ product: Product; message: string }> {
     return this.http.post<{ product: Product; message: string }>(this.API_URL, productData);
   }
 
-  updateProduct(id: number, productData: FormData): Observable<{ product: Product; message: string }> {
+  updateProduct(id: number, productData: any): Observable<{ product: Product; message: string }> {
     return this.http.put<{ product: Product; message: string }>(`${this.API_URL}/${id}`, productData);
   }
 

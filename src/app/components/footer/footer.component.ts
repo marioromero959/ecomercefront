@@ -6,7 +6,7 @@ import { MatButton } from '@angular/material/button';
 @Component({
   selector: 'app-footer',
   standalone:true,
-  imports: [MatIcon, MatButton, RouterLink],
+  imports: [MatIcon, RouterLink],
   template: `
     <footer class="footer">
       <div class="footer-content">

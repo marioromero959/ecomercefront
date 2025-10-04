@@ -21,7 +21,7 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
 @Component({
   selector: 'app-product-detail',
   standalone:true,
-  imports: [MatProgressSpinnerModule, MatCardActions, MatCardSubtitle, MatCardTitle, MatCardHeader, MatCard, MatCardContent, MatIcon, MatButton, MatOption, MatSelect, MatLabel, MatFormField, MatInput, MatChipsModule, MatChipListbox, RouterModule],
+  imports: [MatProgressSpinnerModule, MatCardActions, MatCardSubtitle, MatCardTitle, MatCardHeader, MatCard, MatCardContent, MatIcon, MatButton, MatOption, MatSelect, MatLabel, MatFormField, MatChipsModule, MatChipListbox, RouterModule],
   template: `
   @if(product){
     <div class="product-detail-container">

@@ -1,21 +1,31 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
 import { User } from '../../models/interfaces';
-import { MatIcon } from '@angular/material/icon';
-import { MatDivider } from '@angular/material/divider';
-import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import { MatBadge } from '@angular/material/badge';
-import { MatToolbar } from '@angular/material/toolbar';
-import { MatButton } from '@angular/material/button';
-import { AsyncPipe } from '@angular/common';
+import { CommonModule, AsyncPipe } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-header',
-  standalone:true,
-  imports: [MatIcon, MatDivider, MatMenu, MatMenuItem, MatMenuTrigger, MatBadge, MatToolbar, MatButton, AsyncPipe, RouterLink],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    AsyncPipe,
+    MatIconModule,
+    MatDividerModule,
+    MatMenuModule,
+    MatBadgeModule,
+    MatToolbarModule,
+    MatButtonModule
+  ],
   template: `
     <mat-toolbar color="primary" class="header-toolbar">
       <div class="toolbar-content">
@@ -31,53 +41,49 @@ import { AsyncPipe } from '@angular/common';
           <button mat-button routerLink="/products">Productos</button>
         </div>
 
-        <!-- User Actions -->
         <div class="user-actions">
-          <!-- Cart -->
-          @if(currentUser$ | async){
+          <!-- Cart: muestra solo si hay usuario autenticado -->
+          <ng-container *ngIf="currentUser$ | async as currentUser">
             <button mat-icon-button routerLink="/cart">
-            <mat-icon [matBadge]="cartItemCount" matBadgeColor="warn">shopping_cart</mat-icon>
+              <mat-icon [matBadge]="cartItemCount" matBadgeColor="warn">shopping_cart</mat-icon>
             </button>
-            }
 
-
-          @let user = currentUser$ | async;
-          <!-- User Menu -->
-          @if(user){
-            <div>
+            <!-- User Menu -->
             <button mat-button [matMenuTriggerFor]="userMenu">
-            <mat-icon>account_circle</mat-icon>
-            {{user.firstName}}
+              <mat-icon>account_circle</mat-icon>
+              {{currentUser.firstName}}
             </button>
+
             <mat-menu #userMenu="matMenu">
-            <button mat-menu-item routerLink="/profile">
-            <mat-icon>person</mat-icon>
-            Perfil
-            </button>
-            <button mat-menu-item routerLink="/change-password">
-            <mat-icon>lock_reset</mat-icon>
-            Cambiar Contraseña
-            </button>
-            @if(user.role === 'admin'){
-              <button mat-menu-item routerLink="/admin">
-              <mat-icon>admin_panel_settings</mat-icon>
-              Admin
+              <button mat-menu-item routerLink="/profile">
+                <mat-icon>person</mat-icon>
+                Perfil
               </button>
-              }
+              <button mat-menu-item routerLink="/change-password">
+                <mat-icon>lock_reset</mat-icon>
+                Cambiar Contrase1a
+              </button>
+              <ng-container *ngIf="currentUser.role === 'admin'">
+                <button mat-menu-item routerLink="/admin">
+                  <mat-icon>admin_panel_settings</mat-icon>
+                  Admin
+                </button>
+              </ng-container>
               <mat-divider></mat-divider>
               <button mat-menu-item (click)="logout()">
-              <mat-icon>logout</mat-icon>
-              Cerrar Sesión
+                <mat-icon>logout</mat-icon>
+                Cerrar Sesi3n
               </button>
-              </mat-menu>
-              </div>
-            }@else{
-          <!-- Auth Buttons -->
-          <div>
-            <button mat-button routerLink="/login">Iniciar Sesión</button>
-            <button mat-raised-button color="accent" routerLink="/register">Registrarse</button>
-          </div>
-            }
+            </mat-menu>
+          </ng-container>
+
+          <!-- Si no hay usuario, muestra botones de auth -->
+          <ng-container *ngIf="!(currentUser$ | async)">
+            <div>
+              <button mat-button routerLink="/login">Iniciar Sesi3n</button>
+              <button mat-raised-button color="accent" routerLink="/register">Registrarse</button>
+            </div>
+          </ng-container>
         </div>
       </div>
     </mat-toolbar>

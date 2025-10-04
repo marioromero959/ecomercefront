@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../services/category.service';
 import { Product, Category } from '../../models/interfaces';
@@ -11,7 +11,7 @@ import { SlicePipe } from '@angular/common';
 @Component({
   selector: 'app-home',
   standalone:true,
-  imports: [MatCardActions, MatCardTitle, MatCardHeader, MatCard, MatCardContent, MatCardSubtitle, MatButton, MatIcon, SlicePipe],
+  imports: [MatCardActions, MatCardTitle, MatCardHeader, MatCard, MatCardContent, MatCardSubtitle, MatButton, MatIcon, SlicePipe, RouterModule],
   template: `
     <div class="home-container">
       <!-- Hero Section -->
