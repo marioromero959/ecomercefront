@@ -127,7 +127,8 @@ import { SlicePipe } from '@angular/common';
     .products-grid,
     .categories-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      /* Use clamp to make cards wider on larger screens but stay proportional */
+      grid-template-columns: repeat(auto-fit, minmax(clamp(220px, 28%, 360px), 1fr));
       gap: 20px;
     }
 
@@ -182,6 +183,9 @@ import { SlicePipe } from '@angular/common';
     .product-card,
     .category-card {
       transition: transform 0.3s, box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
     .product-card:hover,
@@ -196,12 +200,46 @@ import { SlicePipe } from '@angular/common';
       object-fit: cover;
     }
 
+    /* Make card content grow so all cards have the same height and actions stick to bottom */
+    .product-card mat-card-content,
+    .compact-card mat-card-content {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .product-card mat-card-actions,
+    .compact-card mat-card-actions {
+      margin-top: auto; /* push actions to the bottom */
+    }
+
+    /* Truncate long titles so header doesn't expand card height */
+    .product-card mat-card-title,
+    .compact-card mat-card-title {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
     /* Featured products compact - taller cards, narrower columns, full images */
     .compact-featured { margin-top: 18px; }
-    .compact-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; align-items:start; }
+    .compact-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(clamp(180px, 22%, 300px),1fr)); gap:12px; align-items:start; }
     .compact-card { padding:10px; min-height: 360px; display:flex; flex-direction:column; }
     /* Show full image without cropping for featured cards */
-    .compact-image { height:220px; object-fit:contain; background: #fafafa; border-radius:6px; }
+    .compact-image { height:200px; object-fit:contain; background: #fafafa; border-radius:6px; }
+
+    /* Allow titles to use up to 2 lines and then ellipsize */
+    .product-card mat-card-title,
+    .compact-card mat-card-title {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .no-products-container {
       display: flex;
