@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CartService } from '../../services/cart.service';
@@ -9,13 +9,15 @@ import { CheckoutDialogComponent } from './checkout-dialog.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatDivider } from '@angular/material/divider';
-import { MatOption } from '@angular/material/autocomplete';
-import { MatFormField, MatLabel, MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatSelect } from '@angular/material/select';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'app-cart',
   standalone:true,
-  imports: [MatIcon,MatCardActions,MatDivider,MatCardContent,MatCardTitle,MatCardHeader,MatCard, MatOption,MatSelect,MatLabel,MatFormField],
+  imports: [MatIcon,MatCardActions,MatDivider,MatCardContent,MatCardTitle,MatCardHeader,MatCard, MatOption,MatSelect,MatLabel,MatFormField, MatButton, RouterModule],
   template: `
     <div class="cart-container">
       <div class="cart-header">
@@ -45,11 +47,9 @@ import { MatFormField, MatLabel, MatSelect } from '@angular/material/select';
               <div class="item-quantity">
                 <mat-form-field appearance="outline">
                   <mat-label>Cantidad</mat-label>
-                  <mat-select [value]="item.quantity" (selectionChange)="updateQuantity(item, $event)">
+                  <mat-select [value]="item.quantity" (selectionChange)="updateQuantity(item, $event.value)">
                     @for(qty of getQuantityOptions(item.Product.stock); track qty){
-                      <mat-option>
-                      {{qty}}
-                      </mat-option>
+                      <mat-option [value]="qty">{{qty}}</mat-option>
                     }
                   </mat-select>
                 </mat-form-field>
@@ -188,7 +188,7 @@ import { MatFormField, MatLabel, MatSelect } from '@angular/material/select';
     }
     
     .item-quantity mat-form-field {
-      width: 80px;
+      width: 180px;
     }
     
     .item-total {
@@ -290,6 +290,7 @@ export class CartComponent implements OnInit {
   cartTotal = 0;
   loading = false;
   cartItemCount = 0;
+  updatingIds = new Set<number>();
 
   constructor(
     private cartService: CartService,
@@ -327,18 +328,46 @@ export class CartComponent implements OnInit {
     return Array.from({ length: maxQty }, (_, i) => i + 1);
   }
 
-  updateQuantity(item: CartItem, newQuantity: any): void {
-    this.cartService.updateCartItem(item.id, newQuantity.value).subscribe({
+  updateQuantity(item: CartItem, newQuantity: number): void {
+    const qty = Number(newQuantity);
+    const stock = Number(item.Product?.stock || 0);
+
+    // Client-side stock validation to avoid calling API with impossible quantities
+    if (qty > stock) {
+      this.snackBar.open('Stock insuficiente. Solo ' + stock + ' disponibles.', 'Cerrar', { duration: 4000 });
+      return;
+    }
+
+    const prevQty = item.quantity;
+
+    // Optimistically update UI
+    item.quantity = qty;
+    this.recalculateTotals();
+
+    // mark updating to disable controls for this item (use cart row id for API)
+    this.updatingIds.add(item.id);
+
+    // call updateCartItem with the cart row id so the service hits PUT /cart/:id
+    this.cartService.updateCartItem(item.id, item.quantity).subscribe({
       next: () => {
+        // Server confirmed; refresh authoritative cart
+        this.updatingIds.delete(item.id);
         this.loadCart();
         this.snackBar.open('Cantidad actualizada', 'Cerrar', { duration: 2000 });
       },
       error: (error) => {
-        this.snackBar.open(error.error?.error || 'Error al actualizar cantidad', 'Cerrar', {
-          duration: 5000
-        });
+        // Rollback on error
+        this.updatingIds.delete(item.id);
+        item.quantity = prevQty;
+        this.recalculateTotals();
+        const msg = error?.error?.error || error?.message || 'Error al actualizar cantidad';
+        this.snackBar.open(msg, 'Cerrar', { duration: 5000 });
       }
     });
+  }
+
+  private recalculateTotals(): void {
+    this.cartTotal = this.cartItems.reduce((sum, it) => sum + (it.quantity * (it.Product?.price || 0)), 0);
   }
 
   removeItem(item: CartItem): void {

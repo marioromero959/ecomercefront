@@ -45,6 +45,7 @@ export class CartService {
   }
 
   updateCartItem(id: number, quantity: number): Observable<{ message: string }> {
+    // Send only quantity to the cart row update endpoint PUT /cart/:id
     return this.http.put<{ message: string }>(`${this.API_URL}/${id}`, { quantity })
       .pipe(
         switchMap(res => this.getCart().pipe(map(() => res)))

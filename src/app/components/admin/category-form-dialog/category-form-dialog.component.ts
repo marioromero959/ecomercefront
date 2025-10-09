@@ -50,7 +50,7 @@ interface DialogData {
         </mat-form-field>
 
         <mat-form-field class="full-width">
-          <mat-label>URL de Imagen (Opcional)</mat-label>
+          <mat-label>URL de Imagen</mat-label>
           <input matInput formControlName="image" placeholder="https://...">
         </mat-form-field>
       </form>
@@ -95,7 +95,7 @@ export class CategoryFormDialogComponent implements OnInit {
     this.categoryForm = this.fb.group({
       name: ['', [Validators.required]],
       description: [''],
-      image: ['']
+      image: ['', [Validators.required]]
     });
   }
 

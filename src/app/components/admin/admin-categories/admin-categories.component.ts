@@ -4,98 +4,96 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { CategoryService } from '../../../services/category.service';
 import { Category } from '../../../models/interfaces';
 import { CategoryFormDialogComponent } from '../category-form-dialog/category-form-dialog.component';
-import { MatIcon } from '@angular/material/icon';
-import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
+import { CommonModule } from '@angular/common';
+import { MatTableModule } from '@angular/material/table';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-admin-categories',
-  standalone:true,
-  imports: [MatIcon,MatCardActions,MatCardContent,MatCardTitle,MatCardHeader,MatCard],
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatTableModule,
+    MatIconModule,
+    MatCardModule,
+    MatButtonModule,
+    MatSnackBarModule,
+    MatTooltipModule
+  ],
   template: `
     <div class="admin-categories">
       <div class="section-header">
         <h2>Gestión de Categorías</h2>
-          <button mat-flat-button color="primary" (click)="openCategoryDialog()">
-            <mat-icon>add</mat-icon>
-            Nueva Categoría
-          </button>
+        <button mat-raised-button color="primary" (click)="openCategoryDialog()">
+          <mat-icon>add</mat-icon>
+          Nueva Categoría
+        </button>
       </div>
 
-      <div class="categories-grid">
-      @for(category of categories;track category.id){
-        <mat-card class="category-card">
-          <mat-card-header>
-            <mat-card-title>{{category.name}}</mat-card-title>
-          </mat-card-header>
-          
-          <mat-card-content>
-          @if(category.description){
-            <p>{{category.description}}</p>
-          }@else{
-            <p class="no-description">Sin descripción</p>
-          }
-          </mat-card-content>
-          
-          <mat-card-actions>
-              <button mat-stroked-button color="primary" (click)="editCategory(category)"><mat-icon>edit</mat-icon></button>
-              <button mat-stroked-button color="warn" (click)="deleteCategory(category)"><mat-icon>delete</mat-icon></button>
-          </mat-card-actions>
-        </mat-card>
-        }
-      </div>
+      <mat-card class="categories-table-card">
+        <div class="table-container">
+          <table mat-table [dataSource]="categories" class="categories-table">
+
+            <!-- Image Column -->
+            <ng-container matColumnDef="image">
+              <th mat-header-cell *matHeaderCellDef>Imagen</th>
+              <td mat-cell *matCellDef="let category">
+                <img [src]="category.image || 'assets/category-default.jpg'" [alt]="category.name" class="category-thumb">
+              </td>
+            </ng-container>
+
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let category">{{category.name}}</td>
+            </ng-container>
+
+            <!-- Description Column -->
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>Descripción</th>
+              <td mat-cell *matCellDef="let category">{{category.description || '—'}}</td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Acciones</th>
+              <td mat-cell *matCellDef="let category">
+                <button mat-icon-button color="primary" (click)="editCategory(category)" matTooltip="Editar">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="deleteCategory(category)" matTooltip="Eliminar">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+      </mat-card>
     </div>
   `,
-  styles: [`
-    .admin-categories {
-      max-width: 1200px;
-    }
-    
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-    
-    .section-header h2 {
-      margin: 0;
-      color: #333;
-    }
-    
-    .categories-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-    }
-    
-    .category-card {
-      transition: transform 0.3s;
-    }
-    
-    .category-card:hover {
-      transform: translateY(-2px);
-    }
-    
-    .no-description {
-      color: #666;
-      font-style: italic;
-    }
-    
-    @media (max-width: 768px) {
-      .section-header {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
-      }
-      
-      .categories-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  `]
+  styles: [
+    `
+    .admin-categories { max-width: 1200px; }
+    .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .section-header h2 { margin:0; color:#333; }
+    .categories-table-card { overflow:hidden; }
+    .table-container { overflow-x:auto; }
+    .categories-table { width:100%; min-width:600px; }
+    .category-thumb { width:48px; height:48px; object-fit:cover; border-radius:6px; }
+    @media (max-width:768px) { .section-header { flex-direction:column; gap:16px; text-align:center; } }
+    `
+  ]
 })
 export class AdminCategoriesComponent implements OnInit {
   categories: Category[] = [];
+  displayedColumns: string[] = ['image', 'name', 'description', 'actions'];
 
   constructor(
     private categoryService: CategoryService,
@@ -126,9 +124,7 @@ export class AdminCategoriesComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.loadCategories();
-      }
+      if (result) this.loadCategories();
     });
   }
 

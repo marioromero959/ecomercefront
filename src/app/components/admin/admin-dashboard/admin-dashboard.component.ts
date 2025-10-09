@@ -4,11 +4,12 @@ import { User } from '../../../models/interfaces';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
 import { MatListItem, MatListModule, MatNavList } from '@angular/material/list';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone:true,
-  imports: [RouterOutlet,MatIcon,MatListItem,MatNavList, MatListModule,RouterModule ],
+  imports: [RouterOutlet,MatIcon,MatListItem,MatNavList, MatListModule,RouterModule, MatButton ],
   template: `
     <div class="admin-dashboard">
       <!-- Admin Header -->

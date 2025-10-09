@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { MatButton } from '@angular/material/button';
 import { MatCard } from '@angular/material/card';
 import { MatChip } from '@angular/material/chips';
 import { MatIcon } from '@angular/material/icon';
@@ -52,16 +53,16 @@ import { MatTableModule } from '@angular/material/table';
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef>Acciones</th>
               <td mat-cell *matCellDef="let user">
-                <button mat-icon-button [matMenuTriggerFor]="userMenu" 
-                        [disabled]="user.role === 'admin'">
+    <button mat-icon-button class="mat-icon-button" color="primary" matTooltip="Acciones" [matMenuTriggerFor]="userMenu" 
+      [disabled]="user.role === 'admin'" aria-label="Acciones">
                   <mat-icon>more_vert</mat-icon>
                 </button>
                 <mat-menu #userMenu="matMenu">
-                  <button mat-menu-item (click)="changeUserRole(user)">
+                  <button mat-menu-item class="mat-menu-item" (click)="changeUserRole(user)">
                     <mat-icon>admin_panel_settings</mat-icon>
                     Hacer Admin
                   </button>
-                  <button mat-menu-item (click)="viewUserDetails(user)">
+                  <button mat-menu-item class="mat-menu-item" (click)="viewUserDetails(user)">
                     <mat-icon>visibility</mat-icon>
                     Ver Detalles
                   </button>

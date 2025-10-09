@@ -101,7 +101,7 @@ interface DialogData {
 
         <div class="image-section">
           <mat-form-field class="full-width">
-            <mat-label>URL de Imagen (Opcional)</mat-label>
+            <mat-label>URL de Imagen</mat-label>
             <input matInput formControlName="image" placeholder="https://...">
           </mat-form-field>
         </div>
@@ -181,7 +181,7 @@ export class ProductFormDialogComponent implements OnInit {
       stock: [0, [Validators.required, Validators.min(0)]],
       categoryId: ['', [Validators.required]],
       featured: [false],
-      image: ['']
+      image: ['', [Validators.required]]
     });
   }
 

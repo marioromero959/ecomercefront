@@ -11,6 +11,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'app-header',
@@ -24,7 +26,9 @@ import { MatButtonModule } from '@angular/material/button';
     MatMenuModule,
     MatBadgeModule,
     MatToolbarModule,
-    MatButtonModule
+    MatButtonModule,
+  // MatFormFieldModule,
+  // MatInputModule
   ],
   template: `
     <mat-toolbar color="primary" class="header-toolbar">
@@ -40,6 +44,8 @@ import { MatButtonModule } from '@angular/material/button';
           <button mat-button routerLink="/">Inicio</button>
           <button mat-button routerLink="/products">Productos</button>
         </div>
+        
+        <!-- Search removed per request -->
 
         <div class="user-actions">
           <!-- Cart: muestra solo si hay usuario autenticado -->
@@ -121,6 +127,27 @@ import { MatButtonModule } from '@angular/material/button';
       gap: 16px;
     }
     
+    .header-search-wrap {
+      margin: 0 8px;
+      flex: 0 1 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+  .header-search { width: 100%; max-width: 220px; }
+  .header-search.small { max-width: 180px; height: 34px; }
+  /* Reduce material form-field paddings so it doesn't expand toolbar height */
+  .header-search .mat-form-field-wrapper { padding: 0 2px; }
+  .header-search .mat-form-field-infix { padding: 0 4px; line-height: 20px; }
+  .header-search input { padding: 2px 6px; height: 20px; line-height: 20px; }
+  .header-search .mat-icon-button { width: 28px; height: 28px; }
+
+  /* Ensure toolbar doesn't grow: limit toolbar padding */
+  .header-toolbar { padding: 0 8px; }
+    /* Material deep overrides moved to global styles.scss */
+    /* See src/styles.scss for global form-field / toolbar sizing rules */
+    
     .user-actions {
       display: flex;
       align-items: center;
@@ -141,6 +168,7 @@ import { MatButtonModule } from '@angular/material/button';
 export class HeaderComponent implements OnInit {
   currentUser$: Observable<User | null>;
   cartItemCount = 0;
+  // search removed
 
   constructor(
     private authService: AuthService,
@@ -161,10 +189,16 @@ export class HeaderComponent implements OnInit {
         this.cartService.getCart().subscribe();
       }
     });
+
+    // search removed
   }
 
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/']);
+  }
+
+  onSearch(query: string): void {
+    // search removed
   }
 }

@@ -1,10 +1,13 @@
 import { Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialog, MatDialogActions, MatDialogContent } from '@angular/material/dialog';
-import { MatDivider } from '@angular/material/divider';
-import { MatIcon } from '@angular/material/icon';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatError, MatFormField, MatLabel } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 
@@ -16,7 +19,16 @@ interface CheckoutData {
 @Component({
   selector: 'app-checkout-dialog',
   standalone:true,
-  imports: [MatProgressSpinnerModule,MatDialogActions,MatDivider,MatError,MatLabel,MatFormField,ReactiveFormsModule,MatDialogContent],
+  imports: [
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatDividerModule,
+    MatProgressSpinnerModule,
+    MatButtonModule,
+    MatIconModule
+  ],
   template: `
     <h2 mat-dialog-title>Finalizar Compra</h2>
     

@@ -7,8 +7,9 @@ import { AuthService } from '../../services/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Product, Category } from '../../models/interfaces';
 import { signal, WritableSignal } from '@angular/core';
-import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginator } from '@angular/material/paginator';
 import { MatIcon } from '@angular/material/icon';
+import { PageEvent } from '@angular/material/paginator';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
 import { MatButton } from '@angular/material/button';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
@@ -20,37 +21,35 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 @Component({
   selector: 'app-product-list',
   standalone:true,
-  imports: [MatPaginatorModule, MatIcon, MatCardActions, MatCardContent, MatCardSubtitle, MatCardTitle, MatCardHeader, MatCard, MatButton, MatOption, MatSelect, MatFormField, MatLabel, MatInput, SlicePipe, ReactiveFormsModule],
+  imports: [MatPaginator, MatIcon, MatCardActions, MatCardContent, MatCardSubtitle, MatCardTitle, MatCardHeader, MatCard, MatButton, MatOption, MatSelect, MatFormField, MatLabel, MatInput, SlicePipe, ReactiveFormsModule],
   template: `
     <div class="product-list-container">
       <!-- Filters -->
       <div class="filters-section">
-        <mat-card class="filters-card">
-          <mat-card-header>
-            <mat-card-title>Filtros</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <mat-form-field class="filter-field">
+        <mat-card class="filters-card vertical">
+          <div class="filters-column">
+            <h3 class="filters-title">Filtros</h3>
+            <mat-form-field class="filter-field compact">
               <mat-label>Buscar</mat-label>
-              <input matInput (keyup.enter)="applyFilters()" [formControl]="searchTerm"
-                     placeholder="Buscar productos...">
+              <input matInput (keyup.enter)="applyFilters()" [formControl]="searchTerm" placeholder="Buscar...">
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
 
-            <mat-form-field class="filter-field">
+            <mat-form-field class="filter-field compact">
               <mat-label>Categoría</mat-label>
               <mat-select [(value)]="selectedCategory" (selectionChange)="applyFilters()">
                 <mat-option value="">Todas</mat-option>
-                <mat-option *ngFor="let category of categories" [value]="category.id">
-                  {{category.name}}
-                </mat-option>
+                @for(category of categories; track category.id){
+                  <mat-option [value]="category.id.toString()">{{category.name}}</mat-option>
+                }
               </mat-select>
             </mat-form-field>
 
-            <button mat-raised-button color="primary" (click)="applyFilters()" class="apply-button">
-              Aplicar Filtros
-            </button>
-          </mat-card-content>
+            <div class="filter-actions">
+              <button mat-flat-button color="primary" (click)="applyFilters()">Aplicar</button>
+              <button mat-stroked-button color="accent" (click)="clearFilters()">Limpiar</button>
+            </div>
+          </div>
         </mat-card>
       </div>
 
@@ -122,14 +121,19 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
           }
 
         <!-- Pagination -->
-        <mat-paginator 
-          *ngIf="totalPages > 1"
-          [length]="totalProducts"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="[12, 24, 48]"
-          (page)="onPageChange($event)"
-          class="paginator">
-        </mat-paginator>
+        <div class="products-pagination">
+        @if(totalProducts > 0){
+          <mat-paginator
+            aria-label="Paginador de productos"
+            [length]="totalProducts"
+            [pageSize]="pageSize"
+            [pageIndex]="currentPage - 1"
+            [pageSizeOptions]="[12, 24, 48]"
+            (page)="onPageChange($event)"
+            class="paginator">
+          </mat-paginator>
+        }
+        </div>
       </div>
     </div>
   `,
@@ -148,14 +152,13 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
       top: 20px;
     }
     
-    .filter-field {
-      width: 100%;
-      margin-bottom: 16px;
-    }
-    
-    .apply-button {
-      width: 100%;
-    }
+  .filters-card.vertical { padding: 12px; max-width: 280px; }
+  .filters-column { display:flex; flex-direction:column; gap:10px; }
+  .filters-title { margin:0 0 4px 0; font-size:1.05rem; color:#333; }
+  .filter-field { width:100%; }
+  .filter-field.compact { width:100%; }
+  .filter-actions { display:flex; gap:8px; justify-content:stretch; }
+  .filter-actions button { flex:1; }
     
     .products-header {
       margin-bottom: 24px;
@@ -290,6 +293,17 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
       background: white;
       border-radius: 8px;
     }
+
+    .products-pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    /* Ensure paginator controls remain visible even when single page */
+    .mat-paginator-range-label, .mat-paginator-page-size {
+      color: rgba(0,0,0,0.87);
+    }
     
     @media (max-width: 768px) {
       .product-list-container {
@@ -402,7 +416,7 @@ export class ProductListComponent implements OnInit {
     this.loadProducts();
   }
 
-  onPageChange(event: any): void {
+  onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex + 1;
     this.pageSize = event.pageSize;
     this.updateUrl();

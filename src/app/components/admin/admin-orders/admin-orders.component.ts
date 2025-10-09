@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatOption } from '@angular/material/autocomplete';
+import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
 import { MatIcon } from '@angular/material/icon';
 import { MatFormField, MatLabel, MatSelect } from '@angular/material/select';
@@ -10,7 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'app-admin-orders',
   standalone:true,
-  imports: [MatIcon,MatCardActions,MatOption,MatSelect,MatLabel,MatFormField,ReactiveFormsModule,MatCardContent,DatePipe,MatCardSubtitle,MatCardTitle,MatCardHeader,MatCard],
+  imports: [MatIcon,MatCardActions,MatOption,MatSelect,MatLabel,MatFormField,ReactiveFormsModule,MatCardContent,DatePipe,MatCardSubtitle,MatCardTitle,MatCardHeader,MatCard, MatButton],
   template: `
     <div class="admin-orders">
       <div class="section-header">
