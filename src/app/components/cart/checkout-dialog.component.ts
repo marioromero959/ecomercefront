@@ -135,3 +135,395 @@ export class CheckoutDialogComponent {
     }
   }
 }
+/*
+
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { 
+  AndreaniService, 
+  CotizacionResponse,
+  Sucursal,
+  codigoPostalValidator 
+} from '../services/andreani.service';
+import { CartService } from '../services/cart.service';
+
+@Component({
+  selector: 'app-checkout',
+  templateUrl: './checkout.component.html',
+  styleUrls: ['./checkout.component.css']
+})
+export class CheckoutComponent implements OnInit {
+  checkoutForm!: FormGroup;
+  cartItems: any[] = [];
+  
+  // Andreani data
+  costoEnvio: number = 0;
+  plazoEntrega: number = 0;
+  cotizacionCargando: boolean = false;
+  sucursales: Sucursal[] = [];
+  mostrarSucursales: boolean = false;
+  metodoEnvio: 'domicilio' | 'sucursal' = 'domicilio';
+
+  constructor(
+    private fb: FormBuilder,
+    private andreaniService: AndreaniService,
+    private cartService: CartService
+  ) {}
+
+  ngOnInit() {
+    this.cartItems = this.cartService.getCart();
+    this.initForm();
+  }
+
+  initForm() {
+    this.checkoutForm = this.fb.group({
+      // Datos personales
+      nombreCompleto: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      telefono: ['', Validators.required],
+      documentoTipo: ['DNI', Validators.required],
+      documentoNumero: ['', Validators.required],
+      
+      // Dirección de envío
+      codigoPostal: ['', [Validators.required, codigoPostalValidator()]],
+      provincia: ['Buenos Aires', Validators.required],
+      localidad: ['', Validators.required],
+      calle: ['', Validators.required],
+      numero: ['', Validators.required],
+      piso: [''],
+      departamento: [''],
+      
+      // Método de envío
+      metodoEnvio: ['domicilio', Validators.required],
+      sucursalSeleccionada: [null]
+    });
+
+    // Calcular envío cuando cambia el código postal
+    this.checkoutForm.get('codigoPostal')?.valueChanges.subscribe(cp => {
+      if (cp && cp.length === 4) {
+        this.validarYCalcularEnvio(cp);
+      }
+    });
+
+    // Buscar sucursales cuando cambia a retiro en sucursal
+    this.checkoutForm.get('metodoEnvio')?.valueChanges.subscribe(metodo => {
+      this.metodoEnvio = metodo;
+      if (metodo === 'sucursal') {
+        const cp = this.checkoutForm.get('codigoPostal')?.value;
+        if (cp) {
+          this.buscarSucursalesCercanas(cp);
+        }
+      }
+    });
+  }
+
+  async validarYCalcularEnvio(codigoPostal: string) {
+    this.cotizacionCargando = true;
+
+    try {
+      // 1. Validar código postal
+      const validacion = await this.andreaniService
+        .validarCodigoPostal(codigoPostal)
+        .toPromise();
+
+      if (validacion?.valido) {
+        // Autocompletar localidad y provincia
+        this.checkoutForm.patchValue({
+          localidad: validacion.localidad,
+          provincia: validacion.provincia
+        });
+
+        // 2. Calcular costo de envío
+        await this.calcularEnvio(codigoPostal);
+      } else {
+        alert('Código postal inválido');
+        this.costoEnvio = 0;
+      }
+    } catch (error) {
+      console.error('Error al validar CP:', error);
+    } finally {
+      this.cotizacionCargando = false;
+    }
+  }
+
+   * Calcula el costo de envío para el carrito
+  async calcularEnvio(codigoPostal: string) {
+    try {
+      const response = await this.andreaniService
+        .calcularEnvioCarrito({
+          items: this.cartItems,
+          codigoPostalDestino: codigoPostal
+        })
+        .toPromise();
+
+      if (response) {
+        this.costoEnvio = response.costoEnvio;
+        this.plazoEntrega = response.plazoEntrega;
+      }
+    } catch (error) {
+      console.error('Error al calcular envío:', error);
+      this.costoEnvio = 0;
+    }
+  }
+
+   * Busca sucursales cercanas al código postal
+  async buscarSucursalesCercanas(codigoPostal: string) {
+    try {
+      this.sucursales = await this.andreaniService
+        .buscarSucursales(codigoPostal)
+        .toPromise() || [];
+      
+      this.mostrarSucursales = this.sucursales.length > 0;
+    } catch (error) {
+      console.error('Error al buscar sucursales:', error);
+      this.sucursales = [];
+    }
+  }
+
+   * Selecciona una sucursal
+  seleccionarSucursal(sucursal: Sucursal) {
+    this.checkoutForm.patchValue({
+      sucursalSeleccionada: sucursal
+    });
+    // Envío gratis o descuento al retirar en sucursal
+    this.costoEnvio = this.costoEnvio * 0.8; // 20% descuento ejemplo
+  }
+
+   * Obtiene el total del carrito
+  getSubtotal(): number {
+    return this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }
+
+   * Obtiene el total con envío
+  getTotal(): number {
+    return this.getSubtotal() + this.costoEnvio;
+  }
+
+   * Obtiene fecha estimada de entrega
+  getFechaEstimada(): string {
+    const fecha = this.andreaniService.calcularFechaEstimada(this.plazoEntrega);
+    return this.andreaniService.formatearFecha(fecha);
+  }
+
+   * Formatea precio
+  formatearPrecio(precio: number): string {
+    return this.andreaniService.formatearPrecio(precio);
+  }
+
+   * Finalizar compra
+  async finalizarCompra() {
+    if (this.checkoutForm.invalid) {
+      alert('Por favor complete todos los campos requeridos');
+      return;
+    }
+
+    const formValue = this.checkoutForm.value;
+    
+    // Preparar datos de la orden
+    const ordenData = {
+      items: this.cartItems,
+      shipping_address: {
+        calle: formValue.calle,
+        numero: formValue.numero,
+        localidad: formValue.localidad,
+        provincia: formValue.provincia,
+        codigo_postal: formValue.codigoPostal,
+        piso: formValue.piso,
+        departamento: formValue.departamento
+      },
+      customer_info: {
+        nombre_completo: formValue.nombreCompleto,
+        email: formValue.email,
+        telefono: formValue.telefono,
+        documento_tipo: formValue.documentoTipo,
+        documento_numero: formValue.documentoNumero
+      },
+      shipping_method: formValue.metodoEnvio,
+      sucursal: formValue.sucursalSeleccionada,
+      generate_andreani_shipment: true // Generar envío en Andreani
+    };
+
+    try {
+      // Aquí llamarías a tu servicio de órdenes
+      // const orden = await this.orderService.createOrder(ordenData).toPromise();
+      
+      console.log('Orden creada:', ordenData);
+      alert('¡Compra realizada con éxito!');
+      
+      // Limpiar carrito y redirigir
+      this.cartService.clearCart();
+      // this.router.navigate(['/order-confirmation', orden.id]);
+      
+    } catch (error) {
+      console.error('Error al crear orden:', error);
+      alert('Error al procesar la compra. Intente nuevamente.');
+    }
+  }
+}
+
+// ============================================
+// TEMPLATE HTML EJEMPLO
+// ============================================
+<div class="checkout-container">
+  <h2>Finalizar Compra</h2>
+
+  <form [formGroup]="checkoutForm" (ngSubmit)="finalizarCompra()">
+    
+    <!-- Datos Personales -->
+    <div class="section">
+      <h3>Datos Personales</h3>
+      
+      <div class="form-group">
+        <label>Nombre Completo *</label>
+        <input type="text" formControlName="nombreCompleto" class="form-control">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" formControlName="email" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono *</label>
+          <input type="tel" formControlName="telefono" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo Documento *</label>
+          <select formControlName="documentoTipo" class="form-control">
+            <option value="DNI">DNI</option>
+            <option value="CUIT">CUIT</option>
+            <option value="PASAPORTE">Pasaporte</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Número *</label>
+          <input type="text" formControlName="documentoNumero" class="form-control">
+        </div>
+      </div>
+    </div>
+
+    <!-- Método de Envío -->
+    <div class="section">
+      <h3>Método de Envío</h3>
+      
+      <div class="form-group">
+        <label>
+          <input type="radio" formControlName="metodoEnvio" value="domicilio">
+          Envío a domicilio
+        </label>
+        <label>
+          <input type="radio" formControlName="metodoEnvio" value="sucursal">
+          Retiro en sucursal Andreani
+        </label>
+      </div>
+    </div>
+
+    <!-- Dirección (si envío a domicilio) -->
+    <div class="section" *ngIf="metodoEnvio === 'domicilio'">
+      <h3>Dirección de Envío</h3>
+      
+      <div class="form-group">
+        <label>Código Postal *</label>
+        <input type="text" formControlName="codigoPostal" 
+               class="form-control" 
+               placeholder="1234"
+               maxlength="4">
+        <small *ngIf="cotizacionCargando">Calculando envío...</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Provincia *</label>
+          <input type="text" formControlName="provincia" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Localidad *</label>
+          <input type="text" formControlName="localidad" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group flex-2">
+          <label>Calle *</label>
+          <input type="text" formControlName="calle" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Número *</label>
+          <input type="text" formControlName="numero" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Piso</label>
+          <input type="text" formControlName="piso" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Depto</label>
+          <input type="text" formControlName="departamento" class="form-control">
+        </div>
+      </div>
+    </div>
+
+    <!-- Sucursales (si retiro en sucursal) -->
+    <div class="section" *ngIf="metodoEnvio === 'sucursal' && mostrarSucursales">
+      <h3>Seleccionar Sucursal</h3>
+      
+      <div class="sucursales-list">
+        <div *ngFor="let sucursal of sucursales" 
+             class="sucursal-item"
+             [class.selected]="checkoutForm.value.sucursalSeleccionada?.id === sucursal.id"
+             (click)="seleccionarSucursal(sucursal)">
+          <h4>{{ sucursal.nombre }}</h4>
+          <p>{{ sucursal.direccion }}</p>
+          <p>{{ sucursal.localidad }}, {{ sucursal.provincia }}</p>
+          <p><small>{{ sucursal.horarios }}</small></p>
+          <p><small>Tel: {{ sucursal.telefono }}</small></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="section resumen">
+      <h3>Resumen de Compra</h3>
+      
+      <div class="resumen-item">
+        <span>Subtotal:</span>
+        <span>{{ formatearPrecio(getSubtotal()) }}</span>
+      </div>
+
+      <div class="resumen-item">
+        <span>Envío:</span>
+        <span *ngIf="!cotizacionCargando">{{ formatearPrecio(costoEnvio) }}</span>
+        <span *ngIf="cotizacionCargando">Calculando...</span>
+      </div>
+
+      <div class="resumen-item total">
+        <span><strong>Total:</strong></span>
+        <span><strong>{{ formatearPrecio(getTotal()) }}</strong></span>
+      </div>
+
+      <div class="entrega-info" *ngIf="plazoEntrega > 0">
+        <p>📦 Entrega estimada: <strong>{{ getFechaEstimada() }}</strong></p>
+        <p><small>({{ plazoEntrega }} días hábiles)</small></p>
+      </div>
+    </div>
+
+    <!-- Botón Finalizar -->
+    <button type="submit" 
+            class="btn btn-primary btn-lg btn-block"
+            [disabled]="checkoutForm.invalid || cotizacionCargando">
+      Finalizar Compra
+    </button>
+  </form>
+</div>
+*/
