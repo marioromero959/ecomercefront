@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -10,6 +10,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { ShippingCalculatorComponent } from './shipping-calculator.component';
+import { CalculoEnvioResponse, Sucursal } from '../../services/andreani.service';
 
 interface CheckoutData {
   cartItems: any[];
@@ -27,48 +29,94 @@ interface CheckoutData {
     MatDividerModule,
     MatProgressSpinnerModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    ShippingCalculatorComponent
   ],
   template: `
     <h2 mat-dialog-title>Finalizar Compra</h2>
     
     <mat-dialog-content>
       <form [formGroup]="checkoutForm">
-        <mat-form-field class="full-width">
-          <mat-label>Dirección de Envío</mat-label>
-          <textarea matInput rows="4" formControlName="shippingAddress" required></textarea>
-          @if(checkoutForm.get('shippingAddress')?.hasError('required')){
-            <mat-error>
-            La dirección de envío es requerida
-            </mat-error>
-          }
-        </mat-form-field>
+        <!-- Cálculo de envío -->
+        <div class="shipping-section">
+          <h3>Envío</h3>
+          <app-shipping-calculator
+            [items]="data.cartItems"
+            (shippingCalculated)="onShippingCalculated($event)"
+            (sucursalSelected)="onSucursalSelected($event)">
+          </app-shipping-calculator>
+        </div>
+
+        <!-- Dirección de envío -->
+        @if(metodoEnvio() === 'domicilio'){
+          <mat-form-field class="full-width">
+            <mat-label>Dirección de Envío</mat-label>
+            <textarea matInput rows="4" formControlName="shippingAddress" required></textarea>
+            @if(checkoutForm.get('shippingAddress')?.hasError('required')){
+              <mat-error>
+                La dirección de envío es requerida
+              </mat-error>
+            }
+          </mat-form-field>
+        }
         
+        <!-- Resumen del pedido -->
         <div class="order-summary">
           <h3>Resumen del Pedido</h3>
           @for(item of data.cartItems; track item.id){
             <div class="summary-item">
-            <span>{{item.Product.name}} x {{item.quantity}}</span>
-            <span>\${{(item.quantity * item.Product.price).toFixed(2)}}</span>
+              <span>{{item.Product.name}} x {{item.quantity}}</span>
+              <span>\${{(item.quantity * item.Product.price).toFixed(2)}}</span>
             </div>
           }
+          
           <mat-divider></mat-divider>
-          <div class="summary-total">
-            <span><strong>Total: \${{data.total.toFixed(2)}}</strong></span>
+          
+          <!-- Subtotal y envío -->
+          <div class="summary-subtotal">
+            <div class="summary-item">
+              <span>Subtotal:</span>
+              <span>\${{data.total.toFixed(2)}}</span>
+            </div>
+            @if(costoEnvio() > 0){
+              <div class="summary-item">
+                <span>Envío:</span>
+                <span>\${{costoEnvio().toFixed(2)}}</span>
+              </div>
+            }
           </div>
+          
+          <mat-divider></mat-divider>
+          
+          <!-- Total final -->
+          <div class="summary-total">
+            <span><strong>Total Final:</strong></span>
+            <span><strong>\${{(data.total + costoEnvio()).toFixed(2)}}</strong></span>
+          </div>
+
+          <!-- Información de envío seleccionada -->
+          @if(sucursalSeleccionada()){
+            <div class="shipping-info">
+              <h4>Retiro en Sucursal:</h4>
+              <p>📍 {{sucursalSeleccionada()?.direccion}}</p>
+              <p>🕒 {{sucursalSeleccionada()?.horarios}}</p>
+            </div>
+          }
         </div>
       </form>
     </mat-dialog-content>
     
     <mat-dialog-actions align="end">
-      <button mat-button (click)="onCancel()">Cancelar</button>
+      <button mat-button 
+              [disabled]="loading()"
+              (click)="onCancel()">Cancelar</button>
       <button mat-raised-button color="primary" 
-              [disabled]="checkoutForm.invalid || loading" 
+              [disabled]="checkoutForm.invalid || loading() || costoEnvio() === 0" 
               (click)="onConfirm()">
-        @if(loading){
+        @if(loading()){
           <mat-spinner diameter="20"></mat-spinner>
         }
-        @if(!loading){
+        @if(!loading()){
           <span>Confirmar Pedido</span>
         }
       </button>
@@ -78,6 +126,15 @@ interface CheckoutData {
     .full-width {
       width: 100%;
       margin-bottom: 16px;
+    }
+    
+    .shipping-section {
+      margin-bottom: 24px;
+    }
+
+    .shipping-section h3 {
+      margin-bottom: 16px;
+      color: #333;
     }
     
     .order-summary {
@@ -93,15 +150,53 @@ interface CheckoutData {
       margin-bottom: 8px;
     }
     
+    .summary-subtotal {
+      margin: 16px 0;
+      padding: 16px 0;
+    }
+    
     .summary-total {
       margin-top: 16px;
       font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .shipping-info {
+      margin-top: 16px;
+      padding: 16px;
+      background-color: #fff;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .shipping-info h4 {
+      margin: 0 0 8px 0;
+      color: #333;
+    }
+
+    .shipping-info p {
+      margin: 4px 0;
+      color: #666;
+    }
+
+    mat-dialog-content {
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .mat-mdc-dialog-content {
+      max-height: 80vh;
     }
   `]
 })
 export class CheckoutDialogComponent {
   checkoutForm: FormGroup;
-  loading = false;
+  loading = signal<boolean>(false);
+  costoEnvio = signal<number>(0);
+  metodoEnvio = signal<'domicilio' | 'sucursal'>('domicilio');
+  sucursalSeleccionada = signal<Sucursal | null>(null);
 
   constructor(
     private fb: FormBuilder,
@@ -115,23 +210,62 @@ export class CheckoutDialogComponent {
     });
   }
 
+  onShippingCalculated(shipping: CalculoEnvioResponse) {
+    this.costoEnvio.set(shipping.costoEnvio);
+  }
+
+  onSucursalSelected(sucursal: Sucursal) {
+    this.sucursalSeleccionada.set(sucursal);
+    this.metodoEnvio.set('sucursal');
+    // Limpiar dirección si se selecciona sucursal
+    this.checkoutForm.get('shippingAddress')?.clearValidators();
+    this.checkoutForm.get('shippingAddress')?.updateValueAndValidity();
+  }
+
   onCancel(): void {
     this.dialogRef.close();
   }
 
   onConfirm(): void {
-    if (this.checkoutForm.valid) {
-      this.loading = true;
-      // Aquí iría la lógica para crear la orden
-      // Por ahora simularemos el proceso
+    if (this.checkoutForm.invalid || this.costoEnvio() === 0) {
+      this.snackBar.open('Por favor complete todos los campos requeridos y calcule el costo de envío', 'Cerrar', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    this.loading.set(true);
+
+    // Construir objeto de checkout
+    const checkoutInfo = {
+      items: this.data.cartItems,
+      total: this.data.total + this.costoEnvio(),
+      shippingCost: this.costoEnvio(),
+      shippingMethod: this.metodoEnvio(),
+      shippingAddress: this.metodoEnvio() === 'domicilio' 
+        ? this.checkoutForm.get('shippingAddress')?.value 
+        : this.sucursalSeleccionada()?.direccion,
+      sucursal: this.sucursalSeleccionada()
+    };
+
+    // Simulamos la creación de la orden
+    try {
       setTimeout(() => {
         this.snackBar.open('¡Pedido realizado con éxito!', 'Cerrar', {
           duration: 5000,
           panelClass: ['success-snackbar']
         });
-        this.dialogRef.close(true);
+        this.loading.set(false);
+        this.dialogRef.close(checkoutInfo);
         this.router.navigate(['/profile']); // Redirigir al perfil para ver pedidos
       }, 2000);
+    } catch (error) {
+      this.loading.set(false);
+      this.snackBar.open('Error al procesar el pedido. Intente nuevamente.', 'Cerrar', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
     }
   }
 }

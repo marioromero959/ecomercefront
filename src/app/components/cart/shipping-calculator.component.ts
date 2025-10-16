@@ -131,13 +131,13 @@ import { NgIf, NgFor } from '@angular/common';
   </div>
 
   <!-- Loading -->
-  <div *ngIf="cargando" class="loading-state">
+  <div *ngIf="cargando() && !cotizacion()" class="loading-state">
     <div class="spinner"></div>
     <p>Calculando envío...</p>
   </div>
 
   <!-- Estado inicial -->
-  <div *ngIf="!cotizacion && !cargando" class="initial-state">
+  <div *ngIf="!cotizacion() && !cargando()" class="initial-state">
     <p>Ingresá tu código postal para conocer el costo y tiempo de entrega</p>
   </div>
 </div>`,
@@ -409,20 +409,22 @@ export class ShippingCalculatorComponent implements OnInit {
         })
         .toPromise() || null;
 
-      this.cotizacion.set(resultado);
-
       // Emitir evento con la cotización
       if (resultado) {
+        this.cotizacion.set(resultado);
         this.shippingCalculated.emit(resultado);
-      }
-
-      // Si eligió sucursal, buscarlas
-      if (this.metodoEnvio() === 'sucursal') {
-        await this.buscarSucursales(codigoPostal);
+        
+        // Si eligió sucursal, buscarlas
+        if (this.metodoEnvio() === 'sucursal') {
+          await this.buscarSucursales(codigoPostal);
+        }
+      } else {
+        throw new Error('No se pudo obtener la cotización');
       }
 
     } catch (error) {
       console.error('Error al calcular envío:', error);
+      this.cotizacion.set(null);
       alert('No se pudo calcular el envío. Intente nuevamente.');
     } finally {
       this.cargando.set(false);
