@@ -1,4 +1,4 @@
-import { Component, Inject, signal } from '@angular/core';
+import { Component, Inject, signal, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -10,6 +10,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { ShippingCalculatorComponent } from './shipping-calculator.component';
 import { CalculoEnvioResponse, Sucursal } from '../../services/andreani.service';
 
@@ -18,9 +20,11 @@ interface CheckoutData {
   total: number;
 }
 
+declare const MercadoPago: any;
+
 @Component({
   selector: 'app-checkout-dialog',
-  standalone:true,
+  standalone: true,
   imports: [
     ReactiveFormsModule,
     MatDialogModule,
@@ -110,16 +114,20 @@ interface CheckoutData {
       <button mat-button 
               [disabled]="loading()"
               (click)="onCancel()">Cancelar</button>
-      <button mat-raised-button color="primary" 
-              [disabled]="checkoutForm.invalid || loading() || costoEnvio() === 0" 
-              (click)="onConfirm()">
-        @if(loading()){
+      
+      <!-- Contenedor para el botón de Mercado Pago -->
+      @if(preferenceId() && !loading() && costoEnvio() > 0 && 
+          (metodoEnvio() === 'sucursal' || 
+           (metodoEnvio() === 'domicilio' && checkoutForm.valid))){
+        <div class="mercadopago-button-container"></div>
+      }
+
+      <!-- Botón de confirmar (visible solo mientras se carga MP) -->
+      @if(loading()){
+        <button mat-raised-button color="primary" [disabled]="true">
           <mat-spinner diameter="20"></mat-spinner>
-        }
-        @if(!loading()){
-          <span>Confirmar Pedido</span>
-        }
-      </button>
+        </button>
+      }
     </mat-dialog-actions>
   `,
   styles: [`
@@ -189,24 +197,112 @@ interface CheckoutData {
     .mat-mdc-dialog-content {
       max-height: 80vh;
     }
+
+    .mercadopago-button-container {
+      min-width: 150px;
+      margin-left: 8px;
+    }
+
+    /* Estilos para el botón de Mercado Pago */
+    :host ::ng-deep .mercadopago-button {
+      background-color: #009ee3;
+      color: white;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+    }
+
+    :host ::ng-deep .mercadopago-button:hover {
+      background-color: #007eb5;
+    }
   `]
 })
-export class CheckoutDialogComponent {
+export class CheckoutDialogComponent implements AfterViewInit {
   checkoutForm: FormGroup;
   loading = signal<boolean>(false);
   costoEnvio = signal<number>(0);
   metodoEnvio = signal<'domicilio' | 'sucursal'>('domicilio');
   sucursalSeleccionada = signal<Sucursal | null>(null);
+  preferenceId = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<CheckoutDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: CheckoutData,
     private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {
     this.checkoutForm = this.fb.group({
       shippingAddress: ['', [Validators.required]]
+    });
+  }
+
+  ngAfterViewInit() {
+    this.initMercadoPago();
+  }
+
+  private async initMercadoPago() {
+    const script = document.createElement('script');
+    script.src = 'https://sdk.mercadopago.com/js/v2';
+    script.type = 'text/javascript';
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      this.createPreference();
+    };
+  }
+
+  private async createPreference() {
+    try {
+      const response = await this.http.post<{preferenceId: string}>(
+        `${environment.apiUrl}/mercadopago`, 
+        {
+          items: this.data.cartItems,
+          shipping: this.costoEnvio(),
+          shippingDetails: {
+            method: this.metodoEnvio(),
+            address: this.metodoEnvio() === 'domicilio' 
+              ? this.checkoutForm.get('shippingAddress')?.value 
+              : this.sucursalSeleccionada()?.direccion,
+            sucursal: this.sucursalSeleccionada()
+          }
+        }
+      ).toPromise();
+
+      if (response?.preferenceId) {
+        this.preferenceId.set(response.preferenceId);
+        this.initCheckoutButton(response.preferenceId);
+      }
+    } catch (error) {
+      console.error('Error creating preference:', error);
+      this.snackBar.open('Error al inicializar el pago. Intente nuevamente.', 'Cerrar', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+    }
+  }
+
+  private initCheckoutButton(preferenceId: string) {
+    const mp = new MercadoPago(environment.mercadoPagoPublicKey, {
+      locale: 'es-AR'
+    });
+
+    const checkout = mp.checkout({
+      preference: {
+        id: preferenceId
+      },
+      render: {
+        container: '.mercadopago-button-container',
+        label: 'Pagar con Mercado Pago'
+      },
+      theme: {
+        elementsColor: '#667eea',
+        headerColor: '#667eea'
+      }
     });
   }
 
@@ -559,8 +655,9 @@ export class CheckoutComponent implements OnInit {
     </div>
 
     <!-- Dirección (si envío a domicilio) -->
-    <div class="section" *ngIf="metodoEnvio === 'domicilio'">
-      <h3>Dirección de Envío</h3>
+    @if(metodoEnvio === 'domicilio'){
+      <div class="section">
+        <h3>Dirección de Envío</h3>
       
       <div class="form-group">
         <label>Código Postal *</label>
@@ -568,7 +665,9 @@ export class CheckoutComponent implements OnInit {
                class="form-control" 
                placeholder="1234"
                maxlength="4">
-        <small *ngIf="cotizacionCargando">Calculando envío...</small>
+        @if(cotizacionCargando){
+          <small>Calculando envío...</small>
+        }
       </div>
 
       <div class="form-row">
@@ -609,20 +708,22 @@ export class CheckoutComponent implements OnInit {
     </div>
 
     <!-- Sucursales (si retiro en sucursal) -->
-    <div class="section" *ngIf="metodoEnvio === 'sucursal' && mostrarSucursales">
-      <h3>Seleccionar Sucursal</h3>
-      
-      <div class="sucursales-list">
-        <div *ngFor="let sucursal of sucursales" 
-             class="sucursal-item"
-             [class.selected]="checkoutForm.value.sucursalSeleccionada?.id === sucursal.id"
-             (click)="seleccionarSucursal(sucursal)">
-          <h4>{{ sucursal.nombre }}</h4>
-          <p>{{ sucursal.direccion }}</p>
-          <p>{{ sucursal.localidad }}, {{ sucursal.provincia }}</p>
-          <p><small>{{ sucursal.horarios }}</small></p>
-          <p><small>Tel: {{ sucursal.telefono }}</small></p>
-        </div>
+    @if(metodoEnvio === 'sucursal' && mostrarSucursales){
+      <div class="section">
+        <h3>Seleccionar Sucursal</h3>
+        
+        <div class="sucursales-list">
+        @for(sucursal of sucursales; track sucursal.id){
+          <div class="sucursal-item"
+               [class.selected]="checkoutForm.value.sucursalSeleccionada?.id === sucursal.id"
+               (click)="seleccionarSucursal(sucursal)">
+            <h4>{{ sucursal.nombre }}</h4>
+            <p>{{ sucursal.direccion }}</p>
+            <p>{{ sucursal.localidad }}, {{ sucursal.provincia }}</p>
+            <p><small>{{ sucursal.horarios }}</small></p>
+            <p><small>Tel: {{ sucursal.telefono }}</small></p>
+          </div>
+        }
       </div>
     </div>
 
@@ -637,8 +738,11 @@ export class CheckoutComponent implements OnInit {
 
       <div class="resumen-item">
         <span>Envío:</span>
-        <span *ngIf="!cotizacionCargando">{{ formatearPrecio(costoEnvio) }}</span>
-        <span *ngIf="cotizacionCargando">Calculando...</span>
+        @if(!cotizacionCargando){
+          <span>{{ formatearPrecio(costoEnvio) }}</span>
+        } @else {
+          <span>Calculando...</span>
+        }
       </div>
 
       <div class="resumen-item total">
@@ -646,10 +750,12 @@ export class CheckoutComponent implements OnInit {
         <span><strong>{{ formatearPrecio(getTotal()) }}</strong></span>
       </div>
 
-      <div class="entrega-info" *ngIf="plazoEntrega > 0">
-        <p>📦 Entrega estimada: <strong>{{ getFechaEstimada() }}</strong></p>
-        <p><small>({{ plazoEntrega }} días hábiles)</small></p>
-      </div>
+      @if(plazoEntrega > 0){
+        <div class="entrega-info">
+          <p>📦 Entrega estimada: <strong>{{ getFechaEstimada() }}</strong></p>
+          <p><small>({{ plazoEntrega }} días hábiles)</small></p>
+        </div>
+      }
     </div>
 
     <!-- Botón Finalizar -->
