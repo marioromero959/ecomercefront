@@ -6,12 +6,12 @@ import { Product, Category } from '../../models/interfaces';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { SlicePipe } from '@angular/common';
+import { DecimalPipe, SlicePipe } from '@angular/common';
 
 @Component({
   selector: 'app-home',
-  standalone:true,
-  imports: [MatCardActions, MatCardTitle, MatCardHeader, MatCard, MatCardContent, MatCardSubtitle, MatButton, MatIcon, SlicePipe, RouterModule],
+  standalone: true,
+  imports: [MatCardActions, MatCardTitle, MatCardHeader, MatCard, MatCardContent, MatCardSubtitle, MatButton, MatIcon, RouterModule, DecimalPipe],
   template: `
     <div class="home-container">
       <!-- Hero Section -->
@@ -19,10 +19,10 @@ import { SlicePipe } from '@angular/common';
         <div class="hero-content">
           <h1>Bienvenido a nuestro E-Commerce</h1>
           <p>Encuentra los mejores productos al mejor precio</p>
-          <button mat-raised-button color="primary" routerLink="/products">
+          <button mat-raised-button color="tertiary" routerLink="/products">
             Ver Productos
           </button>
-        </div>
+          </div>
       </section>
 
       <!-- Categories Section (minimal) -->
@@ -31,7 +31,7 @@ import { SlicePipe } from '@angular/common';
         <div class="categories-strip" role="list">
           @for(category of categories; track category.id){
             <div class="category-pill" role="listitem" (click)="viewProductsByCategory(category.id)">
-              <img class="category-thumb" [src]="category.image || 'assets/category-default.jpg'" [alt]="category.name">
+                <mat-icon>{{category.image}}</mat-icon>
               <div class="category-name">{{category.name}}</div>
             </div>
           }
@@ -49,10 +49,10 @@ import { SlicePipe } from '@angular/common';
                  [alt]="product.name" class="product-image compact-image">
             <mat-card-header>
               <mat-card-title>{{product.name}}</mat-card-title>
-              <mat-card-subtitle>\${{product.price}}</mat-card-subtitle>
+              <mat-card-subtitle>\${{product.price | number}}</mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
-              <p>{{product.description | slice:0:80}}...</p>
+              <p>{{product.description}}</p>
             </mat-card-content>
             <mat-card-actions>
               <button mat-button color="primary" (click)="viewProduct(product.id)">
@@ -120,6 +120,7 @@ import { SlicePipe } from '@angular/common';
       text-align: center;
       margin-bottom: 40px;
       font-size: 2.5rem;
+      font-weight: 300;
       color: #333;
     }
 
@@ -147,8 +148,10 @@ import { SlicePipe } from '@angular/common';
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       min-width: 96px;
+      width: 300px;
       padding: 8px;
       background: #fff;
       border-radius: 10px;
@@ -156,6 +159,12 @@ import { SlicePipe } from '@angular/common';
       cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
       text-align: center;
+      .mat-icon { 
+        font-size: 36px;
+        width: 36px;
+        height: 36px;
+        color: #360068ff;
+      }
     }
 
     .category-pill:hover {
@@ -186,6 +195,7 @@ import { SlicePipe } from '@angular/common';
       display: flex;
       flex-direction: column;
       height: 100%;
+      background: #fff;
     }
 
     .product-card:hover,
@@ -200,7 +210,6 @@ import { SlicePipe } from '@angular/common';
       object-fit: cover;
     }
 
-    /* Make card content grow so all cards have the same height and actions stick to bottom */
     .product-card mat-card-content,
     .compact-card mat-card-content {
       flex: 1 1 auto;
@@ -211,27 +220,23 @@ import { SlicePipe } from '@angular/common';
 
     .product-card mat-card-actions,
     .compact-card mat-card-actions {
-      margin-top: auto; /* push actions to the bottom */
+      margin-top: auto;
     }
 
     /* Truncate long titles so header doesn't expand card height */
     .product-card mat-card-title,
     .compact-card mat-card-title {
       display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
+      color: #764ba2;
+      font-weight: 400;
     }
 
-    /* Featured products compact - taller cards, narrower columns, full images */
     .compact-featured { margin-top: 18px; }
     .compact-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(clamp(180px, 22%, 300px),1fr)); gap:12px; align-items:start; }
     .compact-card { padding:10px; min-height: 360px; display:flex; flex-direction:column; }
     /* Show full image without cropping for featured cards */
-    .compact-image { height:200px; object-fit:contain; background: #fafafa; border-radius:6px; }
+    .compact-image { height:200px; object-fit:contain; background: #fff; border-radius:6px; }
 
-    /* Allow titles to use up to 2 lines and then ellipsize */
     .product-card mat-card-title,
     .compact-card mat-card-title {
       display: -webkit-box;
@@ -291,7 +296,7 @@ export class HomeComponent implements OnInit {
     private productService: ProductService,
     private categoryService: CategoryService,
     private router: Router
-  ) {}
+  ) { }
   ngOnInit(): void {
     this.loadCategories();
     this.loadFeaturedProducts();
