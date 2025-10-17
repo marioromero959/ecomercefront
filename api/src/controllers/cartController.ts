@@ -14,6 +14,32 @@ interface AuthRequest extends Request {
   params: any;
 }
 
+/**
+ * @swagger
+ * /api/cart:
+ *   get:
+ *     summary: Get user's cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cart retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 cartItems:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/CartItem'
+ *                 total:
+ *                   type: string
+ *                   description: Total price of cart items
+ *       500:
+ *         description: Failed to get cart
+ */
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -51,6 +77,41 @@ export const getCart = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/cart:
+ *   post:
+ *     summary: Add item to cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *             properties:
+ *               productId:
+ *                 type: integer
+ *                 description: ID of the product to add
+ *               quantity:
+ *                 type: integer
+ *                 default: 1
+ *                 minimum: 1
+ *                 description: Quantity to add
+ *     responses:
+ *       200:
+ *         description: Product added to cart successfully
+ *       400:
+ *         description: Invalid request or insufficient stock
+ *       404:
+ *         description: Product not found
+ *       500:
+ *         description: Failed to add to cart
+ */
 export const addToCart = async (req: AuthRequest, res: Response) => {
   try {
     const { productId, quantity = 1 } = req.body;
@@ -87,6 +148,53 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/cart/{id}:
+ *   put:
+ *     summary: Update cart item quantity
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Cart item ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quantity
+ *             properties:
+ *               quantity:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: New quantity (0 to remove item)
+ *     responses:
+ *       200:
+ *         description: Cart item updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 cartItem:
+ *                   $ref: '#/components/schemas/CartItem'
+ *       400:
+ *         description: Invalid quantity or insufficient stock
+ *       404:
+ *         description: Cart item not found
+ *       500:
+ *         description: Failed to update cart
+ */
 export const updateCartItem = async (req: AuthRequest, res: Response) => {
   try {
     const id = Number(req.params.id);
@@ -135,6 +243,29 @@ export const updateCartItem = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/cart/{id}:
+ *   delete:
+ *     summary: Remove item from cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Cart item ID
+ *     responses:
+ *       200:
+ *         description: Item removed successfully
+ *       404:
+ *         description: Cart item not found
+ *       500:
+ *         description: Failed to remove from cart
+ */
 export const removeFromCart = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -156,6 +287,20 @@ export const removeFromCart = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/cart:
+ *   delete:
+ *     summary: Clear all items from cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cart cleared successfully
+ *       500:
+ *         description: Failed to clear cart
+ */
 export const clearCart = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;

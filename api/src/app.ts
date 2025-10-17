@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 import { createServer } from 'http';
 import path from 'path';
 import { sequelize } from './config/database';
@@ -42,6 +44,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/andreani', andreaniRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/mercadopago', mercadoPagoRoutes);
+
+// Swagger Documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -44,6 +44,49 @@ interface DataCompra {
   productos: Producto[];
 }
 
+/**
+ * @swagger
+ * /api/mercadopago/create-preference:
+ *   post:
+ *     summary: Create MercadoPago preference for purchase
+ *     tags: [MercadoPago]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - dataClient
+ *               - productos
+ *             properties:
+ *               dataClient:
+ *                 $ref: '#/components/schemas/MercadoPagoClient'
+ *               productos:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/MercadoPagoProduct'
+ *     responses:
+ *       200:
+ *         description: Preference created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 preferenceId:
+ *                   type: string
+ *                   description: MercadoPago preference ID
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 export const comprarProductos = async (req: Request<{}, {}, DataCompra>, res: Response) => {
   const dataCompra = req.body;
 

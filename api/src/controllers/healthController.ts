@@ -1,6 +1,29 @@
 import { Request, Response } from 'express';
 import { sequelize } from '../config/database';
 
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Check API health status
+ *     description: |
+ *       Returns the health status of the API including database connectivity,
+ *       uptime, and environment information.
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: System is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
+ *       503:
+ *         description: System is unhealthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
+ */
 export const healthCheck = async (req: Request, res: Response) => {
   try {
     // Verificar conexión a la base de datos

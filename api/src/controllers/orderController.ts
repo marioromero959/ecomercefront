@@ -9,6 +9,43 @@ interface AuthRequest extends Request {
   user?: any;
 }
 
+/**
+ * @swagger
+ * /api/orders:
+ *   post:
+ *     summary: Create a new order from cart items
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - shippingAddress
+ *             properties:
+ *               shippingAddress:
+ *                 type: string
+ *                 description: Delivery address for the order
+ *     responses:
+ *       201:
+ *         description: Order created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 order:
+ *                   $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Cart is empty or insufficient stock
+ *       500:
+ *         description: Server error
+ */
 export const createOrder = async (req: AuthRequest, res: Response) => {
   const transaction = await sequelize.transaction();
   
@@ -97,6 +134,29 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     summary: Get all orders (admin gets all, users get their own)
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 orders:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Order'
+ *       500:
+ *         description: Server error
+ */
 export const getOrders = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -120,6 +180,36 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/orders/{id}:
+ *   get:
+ *     summary: Get order by ID
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Order details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 order:
+ *                   $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found
+ *       500:
+ *         description: Server error
+ */
 export const getOrder = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -150,6 +240,51 @@ export const getOrder = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/orders/{id}/status:
+ *   put:
+ *     summary: Update order status (Admin only)
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, processing, shipped, delivered, cancelled]
+ *                 description: New order status
+ *     responses:
+ *       200:
+ *         description: Order status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 order:
+ *                   $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found
+ *       500:
+ *         description: Server error
+ */
 export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;

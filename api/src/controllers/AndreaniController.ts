@@ -5,6 +5,39 @@ export class AndreaniController {
   /**
    * Cotizar envío
    */
+  /**
+   * @swagger
+   * /api/andreani/cotizar:
+   *   post:
+   *     summary: Get shipping quote from Andreani
+   *     tags: [Andreani]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/AndreaniShipmentQuote'
+   *     responses:
+   *       200:
+   *         description: Shipping quote retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 tarifaConIva:
+   *                   type: number
+   *                 plazoEntrega:
+   *                   type: number
+   *                 servicios:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *       400:
+   *         description: Missing required data
+   *       500:
+   *         description: Server error
+   */
   async cotizarEnvio(req: Request, res: Response) {
     try {
       const { 
@@ -41,6 +74,52 @@ export class AndreaniController {
   /**
    * Buscar sucursales cercanas
    */
+  /**
+   * @swagger
+   * /api/andreani/sucursales:
+   *   get:
+   *     summary: Find nearby Andreani branches
+   *     tags: [Andreani]
+   *     parameters:
+   *       - in: query
+   *         name: codigoPostal
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Postal code
+   *       - in: query
+   *         name: localidad
+   *         schema:
+   *           type: string
+   *         description: City
+   *       - in: query
+   *         name: provincia
+   *         schema:
+   *           type: string
+   *         description: Province
+   *     responses:
+   *       200:
+   *         description: List of branches
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 type: object
+   *                 properties:
+   *                   id:
+   *                     type: string
+   *                   direccion:
+   *                     type: string
+   *                   localidad:
+   *                     type: string
+   *                   provincia:
+   *                     type: string
+   *       400:
+   *         description: Missing postal code
+   *       500:
+   *         description: Server error
+   */
   async buscarSucursales(req: Request, res: Response) {
     try {
       const { codigoPostal, localidad, provincia } = req.query;
@@ -70,6 +149,35 @@ export class AndreaniController {
   /**
    * Generar orden de envío
    */
+  /**
+   * @swagger
+   * /api/andreani/orden:
+   *   post:
+   *     summary: Generate shipping order
+   *     tags: [Andreani]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/AndreaniShipmentOrder'
+   *     responses:
+   *       201:
+   *         description: Shipping order created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 numeroEnvio:
+   *                   type: string
+   *                 estado:
+   *                   type: string
+   *       400:
+   *         description: Missing required data
+   *       500:
+   *         description: Server error
+   */
   async generarOrdenEnvio(req: Request, res: Response) {
     try {
       const ordenData = req.body;
@@ -95,6 +203,45 @@ export class AndreaniController {
 
   /**
    * Obtener tracking de envío
+   */
+  /**
+   * @swagger
+   * /api/andreani/tracking/{numeroEnvio}:
+   *   get:
+   *     summary: Get shipment tracking information
+   *     tags: [Andreani]
+   *     parameters:
+   *       - in: path
+   *         name: numeroEnvio
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Shipping number
+   *     responses:
+   *       200:
+   *         description: Tracking information retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 estado:
+   *                   type: string
+   *                 eventos:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       fecha:
+   *                         type: string
+   *                       estado:
+   *                         type: string
+   *                       descripcion:
+   *                         type: string
+   *       400:
+   *         description: Missing shipping number
+   *       500:
+   *         description: Server error
    */
   async obtenerTracking(req: Request, res: Response) {
     try {
@@ -148,6 +295,60 @@ export class AndreaniController {
 
   /**
    * Calcular costo de envío simple (para el carrito)
+   */
+  /**
+   * @swagger
+   * /api/andreani/calcular-envio:
+   *   post:
+   *     summary: Calculate shipping cost for cart items
+   *     tags: [Andreani]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - items
+   *               - codigoPostalDestino
+   *             properties:
+   *               items:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *                   properties:
+   *                     weight:
+   *                       type: number
+   *                     dimensions:
+   *                       type: string
+   *                     quantity:
+   *                       type: integer
+   *                     price:
+   *                       type: number
+   *               codigoPostalDestino:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Shipping cost calculated successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 costoEnvio:
+   *                   type: number
+   *                 plazoEntrega:
+   *                   type: integer
+   *                 servicios:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                 warning:
+   *                   type: string
+   *       400:
+   *         description: Missing required data
+   *       500:
+   *         description: Server error
    */
   async calcularCostoEnvio(req: Request, res: Response) {
     try {
