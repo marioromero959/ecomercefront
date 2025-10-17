@@ -1,46 +1,17 @@
-# Dependencias
 node_modules
-npm-debug.log*
-
-# Archivos de build
-dist
-.tmp
-.angular
-
-# Archivos de configuración local
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Archivos de IDE
-.vscode
-.idea
-*.swp
-*.swo
-
-# Archivos del sistema
-.DS_Store
-Thumbs.db
-
-# Archivos de Git
+npm-debug.log
 .git
 .gitignore
-
-# Archivos de testing
+README.md
+.env
+.nyc_output
 coverage
 .nyc_output
-
-# Archivos de logs
-logs
+.coverage
+.vscode
+.idea
 *.log
-
-# Archivos temporales
-*.tmp
-*.temp
-
-# Archivos de Docker
-Dockerfile
-.dockerignore
-docker-compose*.yml
+dist
+build
+.DS_Store
+Thumbs.db
