@@ -295,12 +295,15 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
 
     // Configurar los campos de imágenes
     const imageUrls = Array.isArray(images) ? images : [];
-    const mainImage = imageUrls.length > 0 ? imageUrls[0] : product.image;
+    
+    // Si no se enviaron nuevas imágenes, mantener las existentes
+    const finalImageUrls = imageUrls.length > 0 ? imageUrls : (images === null ? [] : (product.images || []));
+    const mainImage = finalImageUrls.length > 0 ? finalImageUrls[0] : null;
 
     await product.update({
       name: name || product.name,
       image: mainImage,
-      images: imageUrls.length > 0 ? imageUrls : (product.images || []),
+      images: finalImageUrls,
       description: description || product.description,
       price: price ? parseFloat(price) : product.price,
       stock: stock ? parseInt(stock) : product.stock,

@@ -284,6 +284,22 @@ export class ProductFormDialogComponent implements OnInit {
         categoryId: this.data.product.categoryId,
         featured: this.data.product.featured
       });
+
+      // Mostrar las imágenes existentes
+      if (this.data.product.images && Array.isArray(this.data.product.images)) {
+        this.data.product.images.forEach((imageUrl, index) => {
+          this.blobs.push({
+            id: index.toString(),
+            blob: imageUrl
+          });
+        });
+      } else if (this.data.product.image) {
+        // Soporte para productos con una sola imagen
+        this.blobs.push({
+          id: '0',
+          blob: this.data.product.image
+        });
+      }
     }
   }
 
@@ -317,12 +333,23 @@ export class ProductFormDialogComponent implements OnInit {
   }
 
   eliminarImg(id: number) {
-    this.imagenesProducto.splice(id, 1);
-    this.blobs.splice(id, 1);
+    const image = this.blobs[id].blob;
+    // Si la imagen es una URL (imagen existente) y no hay otras imágenes nuevas
+    if (typeof image === 'string' && image.startsWith('http') && this.imagenesProducto.length === 0) {
+      // Eliminar de las imágenes existentes
+      const existingImages = this.blobs.map(b => b.blob as string);
+      existingImages.splice(id, 1);
+      // Actualizar el array de blobs
+      this.blobs = existingImages.map((url, i) => ({ id: i.toString(), blob: url }));
+    } else {
+      // Eliminar tanto del array de archivos como de blobs
+      this.imagenesProducto.splice(id, 1);
+      this.blobs.splice(id, 1);
+    }
   }
 
   onSave(): void {
-    if (this.productForm.valid && this.blobs.length > 0) {
+    if (this.productForm.valid && (this.blobs.length > 0 || this.data.product)) {
       this.loading = true;
       const formData = new FormData();
       
@@ -335,9 +362,22 @@ export class ProductFormDialogComponent implements OnInit {
       formData.append('featured', String(this.productForm.value.featured));
       
       // Agregar imágenes
-      this.imagenesProducto.forEach((imagen) => {
-        formData.append('images', imagen);
-      });
+      if (this.imagenesProducto.length > 0) {
+        // Si hay nuevas imágenes, las agregamos
+        this.imagenesProducto.forEach((imagen) => {
+          formData.append('images', imagen);
+        });
+      } else if (this.blobs.length > 0) {
+        // Si solo hay URLs existentes, las enviamos como array
+        this.blobs.forEach(blob => {
+          if (typeof blob.blob === 'string') {
+            formData.append('images', blob.blob);
+          }
+        });
+      } else {
+        // Si no hay imágenes, enviamos null para indicar que se deben eliminar todas
+        formData.append('images', '');
+      }
 
       const request = this.data.product
         ? this.productService.updateProduct(this.data.product.id, formData)

@@ -155,7 +155,8 @@ export const updateCategory = async (req: Request, res: Response) => {
 
     await category.update({
       name: name || category.name,
-      image: image || category.image,
+      // Si image es null, eliminar la imagen, si no se envió mantener la existente
+      image: image === null ? null : (image || category.image),
       description: description || category.description
     });
 

@@ -199,9 +199,16 @@ export class CategoryFormDialogComponent implements OnInit {
     if (this.data.category) {
       this.categoryForm.patchValue({
         name: this.data.category.name,
-        description: this.data.category.description || '',
-        image: this.data.category.image || ''
+        description: this.data.category.description || ''
       });
+      
+      // Mostrar la imagen existente si hay una
+      if (this.data.category.image) {
+        this.blobs.push({
+          id: '0',
+          blob: this.data.category.image
+        });
+      }
     }
   }
 
@@ -235,12 +242,19 @@ export class CategoryFormDialogComponent implements OnInit {
   }
 
   eliminarImg(id:number) {
-    this.imagenesProducto.splice(id, 1);
-    this.blobs.splice(id, 1);
+    const image = this.blobs[id].blob;
+    // Si la imagen es una URL (imagen existente) y no hay otras imágenes nuevas
+    if (typeof image === 'string' && image.startsWith('http') && this.imagenesProducto.length === 0) {
+      this.blobs = [];
+      this.imagenesProducto = [];
+    } else {
+      this.imagenesProducto.splice(id, 1);
+      this.blobs.splice(id, 1);
+    }
   }
 
   onSave(): void {
-    if (this.categoryForm.valid && this.blobs.length > 0) {
+    if (this.categoryForm.valid && (this.blobs.length > 0 || this.data.category)) {
       this.loading = true;
       const formData = new FormData();
       
@@ -248,10 +262,17 @@ export class CategoryFormDialogComponent implements OnInit {
       formData.append('name', this.categoryForm.get('name')?.value);
       formData.append('description', this.categoryForm.get('description')?.value);
       
-      // Agregar imágenes
-      this.imagenesProducto.forEach((imagen, index) => {
-        formData.append('images', imagen);
-      });
+      // Manejar imágenes
+      if (this.imagenesProducto.length > 0) {
+        // Si hay una nueva imagen
+        formData.append('images', this.imagenesProducto[0]);
+      } else if (this.blobs.length > 0) {
+        // Si hay una URL existente
+        formData.append('image', this.blobs[0].blob as string);
+      } else {
+        // Si no hay imagen, enviar null para indicar que se debe eliminar
+        formData.append('image', '');
+      }
 
       const request = this.data.category 
         ? this.categoryService.updateCategory(this.data.category.id, formData)
