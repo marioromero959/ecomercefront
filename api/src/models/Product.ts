@@ -32,7 +32,7 @@ export class Product extends Model<ProductAttributes, ProductCreationAttributes>
 
 Product.init({
   id: {
-    type: DataTypes.INTEGER.UNSIGNED,
+    type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
@@ -64,12 +64,13 @@ Product.init({
     allowNull: true,
   },
   categoryId: {
-    type: DataTypes.INTEGER.UNSIGNED,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: Category,
       key: 'id',
     },
+    field: 'category_id'
   },
   featured: {
     type: DataTypes.BOOLEAN,
@@ -78,4 +79,5 @@ Product.init({
 }, {
   sequelize,
   tableName: 'products',
+  underscored: true
 });

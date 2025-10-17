@@ -36,17 +36,19 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
 
 User.init({
   id: {
-    type: DataTypes.INTEGER.UNSIGNED,
+    type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
   firstName: {
     type: DataTypes.STRING(50),
     allowNull: false,
+    field: 'first_name'
   },
   lastName: {
     type: DataTypes.STRING(50),
     allowNull: false,
+    field: 'last_name'
   },
   email: {
     type: DataTypes.STRING(100),

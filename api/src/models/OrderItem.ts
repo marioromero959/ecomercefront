@@ -27,25 +27,27 @@ export class OrderItem extends Model<OrderItemAttributes, OrderItemCreationAttri
 
 OrderItem.init({
   id: {
-    type: DataTypes.INTEGER.UNSIGNED,
+    type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
   orderId: {
-    type: DataTypes.INTEGER.UNSIGNED,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: Order,
       key: 'id',
     },
+    field: 'order_id'
   },
   productId: {
-    type: DataTypes.INTEGER.UNSIGNED,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: Product,
       key: 'id',
     },
+    field: 'product_id'
   },
   quantity: {
     type: DataTypes.INTEGER,

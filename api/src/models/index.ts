@@ -8,28 +8,28 @@ import { OrderItem } from './OrderItem';
 // Definir asociaciones
 export const setupAssociations = () => {
   // Category - Product
-  Category.hasMany(Product, { foreignKey: 'categoryId', onDelete: 'CASCADE' });
-  Product.belongsTo(Category, { foreignKey: 'categoryId' });
+  Category.hasMany(Product, { foreignKey: 'category_id', onDelete: 'CASCADE' });
+  Product.belongsTo(Category, { foreignKey: 'category_id' });
 
   // User - Cart
-  User.hasMany(Cart, { foreignKey: 'userId', onDelete: 'CASCADE' });
-  Cart.belongsTo(User, { foreignKey: 'userId' });
+  User.hasMany(Cart, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+  Cart.belongsTo(User, { foreignKey: 'user_id' });
 
   // Product - Cart
-  Product.hasMany(Cart, { foreignKey: 'productId', onDelete: 'CASCADE' });
-  Cart.belongsTo(Product, { foreignKey: 'productId' });
+  Product.hasMany(Cart, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+  Cart.belongsTo(Product, { foreignKey: 'product_id' });
 
   // User - Order
-  User.hasMany(Order, { foreignKey: 'userId', onDelete: 'CASCADE' });
-  Order.belongsTo(User, { foreignKey: 'userId' });
+  User.hasMany(Order, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+  Order.belongsTo(User, { foreignKey: 'user_id' });
 
   // Order - OrderItem
-  Order.hasMany(OrderItem, { foreignKey: 'orderId', onDelete: 'CASCADE' });
-  OrderItem.belongsTo(Order, { foreignKey: 'orderId' });
+  Order.hasMany(OrderItem, { foreignKey: 'order_id', onDelete: 'CASCADE' });
+  OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 
   // Product - OrderItem
-  Product.hasMany(OrderItem, { foreignKey: 'productId', onDelete: 'CASCADE' });
-  OrderItem.belongsTo(Product, { foreignKey: 'productId' });
+  Product.hasMany(OrderItem, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+  OrderItem.belongsTo(Product, { foreignKey: 'product_id' });
 };
 
 export {

@@ -26,17 +26,18 @@ export class Order extends Model<OrderAttributes, OrderCreationAttributes> imple
 
 Order.init({
   id: {
-    type: DataTypes.INTEGER.UNSIGNED,
+    type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
   userId: {
-    type: DataTypes.INTEGER.UNSIGNED,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: User,
       key: 'id',
     },
+    field: 'user_id'
   },
   total: {
     type: DataTypes.DECIMAL(10, 2),
@@ -52,6 +53,7 @@ Order.init({
   shippingAddress: {
     type: DataTypes.TEXT,
     allowNull: false,
+    field: 'shipping_address'
   },
 }, {
   sequelize,

@@ -36,7 +36,7 @@ export const getProducts = async (req: Request, res: Response) => {
       include: [{ model: Category, attributes: ['id', 'name'] }],
       limit: Number(limit),
       offset,
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     res.json({

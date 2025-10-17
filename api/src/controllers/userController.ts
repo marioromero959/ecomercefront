@@ -11,10 +11,10 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
     const offset = (Number(page) - 1) * Number(limit);
 
     const { count, rows } = await User.findAndCountAll({
-      attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'createdAt'],
+      attributes: ['id', 'first_name', 'last_name', 'email', 'role', 'created_at'],
       limit: Number(limit),
       offset,
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     res.json({
@@ -48,8 +48,8 @@ export const updateUserRole = async (req: AuthRequest, res: Response) => {
       message: 'User role updated successfully',
       user: {
         id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.get('first_name'),
+        lastName: user.get('last_name'),
         email: user.email,
         role: user.role
       }

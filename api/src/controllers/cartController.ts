@@ -1,9 +1,17 @@
 import { Request, Response } from 'express';
 import { Cart } from '../models/Cart';
 import { Product } from '../models/Product';
+import { Model, ModelStatic } from 'sequelize';
+
+interface CartModel extends ModelStatic<Cart> {}
+interface ProductModel extends ModelStatic<Product> {}
 
 interface AuthRequest extends Request {
-  user?: any;
+  user?: {
+    id: number;
+  };
+  body: any;
+  params: any;
 }
 
 export const getCart = async (req: AuthRequest, res: Response) => {
