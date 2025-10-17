@@ -1,0 +1,49 @@
+# Dependencias
+node_modules
+npm-debug.log*
+
+# Archivos de build
+dist
+.tmp
+
+# Archivos de configuración local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos de IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Git
+.git
+.gitignore
+
+# Archivos de testing
+coverage
+.nyc_output
+
+# Archivos de logs
+logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Uploads (se creará en runtime)
+uploads/*
+!uploads/.gitkeep
