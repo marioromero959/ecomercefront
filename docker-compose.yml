@@ -11,7 +11,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres123
-      - POSTGRES_DB=postgres
+      - POSTGRES_DB=ecommerce_db
       - PGUSER=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -20,11 +20,11 @@ services:
     networks:
       - ecommerce_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_db"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 40s
+      start_period: 10s
 
   # Backend API Node.js
   backend:
@@ -36,7 +36,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - PORT=3000
       - DB_HOST=database
       - DB_PORT=5432
@@ -50,7 +50,6 @@ services:
       - CORS_ORIGIN=http://localhost:4200,http://localhost:80
     volumes:
       - backend_uploads:/app/uploads
-      - ./api/.env:/app/.env:ro
     depends_on:
       database:
         condition: service_healthy
@@ -72,8 +71,14 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - ecommerce_network
     healthcheck:

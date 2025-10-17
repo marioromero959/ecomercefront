@@ -10,14 +10,15 @@ COPY package*.json ./
 # Instalar TODAS las dependencias (incluyendo devDependencies para el build)
 RUN npm install
 
+# Crear directorio para uploads
+RUN mkdir -p uploads
+
 # Copiar código fuente
 COPY . .
 
-# Compilar TypeScript
-RUN npm run build
-
-# Crear directorio para uploads
-RUN mkdir -p uploads
+# Compilar TypeScript y limpiar caché de npm
+RUN npm run build && \
+    npm cache clean --force
 
 # Exponer puerto
 EXPOSE 3000

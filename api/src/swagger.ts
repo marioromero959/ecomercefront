@@ -415,10 +415,6 @@ const swaggerDefinition = {
       description: 'Product management'
     },
     {
-      name: 'Auth',
-      description: 'Authentication'
-    },
-    {
       name: 'Cart',
       description: 'Shopping cart operations'
     },
