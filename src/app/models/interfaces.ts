@@ -22,6 +22,7 @@ export interface User {
     price: number;
     stock: number;
     image?: string;
+    images?: string[];
     categoryId: number;
     featured: boolean;
     Category?: Category;

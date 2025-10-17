@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -13,6 +13,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule as MatSpinner } from '@angular/material/progress-spinner';
 
 interface DialogData {
@@ -33,7 +34,8 @@ interface DialogData {
     MatCheckboxModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    MatCardModule
+    MatCardModule,
+    MatIconModule
   ],
   template: `
     <h2 mat-dialog-title>{{data.product ? 'Editar' : 'Nuevo'}} Producto</h2>
@@ -99,17 +101,47 @@ interface DialogData {
           </mat-checkbox>
         </div>
 
-        <div class="image-section">
-          <mat-form-field class="full-width">
-            <mat-label>URL de Imagen</mat-label>
-            <input matInput formControlName="image" placeholder="https://...">
-          </mat-form-field>
+        <div class="image-upload-section">
+          <div class="image-input">
+            <input #fileInput 
+                   type="file" 
+                   (change)="cargarImg($event)" 
+                   accept=".png,.jpg,.jpeg" 
+                   multiple="multiple"
+                   [style.display]="'none'">
+            <button mat-raised-button 
+                    color="primary" 
+                    (click)="fileInput.click()"
+                    [disabled]="blobs.length >= 8">
+              <mat-icon>add_photo_alternate</mat-icon>
+              Agregar Imágenes
+            </button>
+          </div>
+          
+          <div class="image-info">
+            <p>Imágenes subidas: {{blobs.length}}/8</p>
+            <p *ngIf="blobs.length > 0" class="hint-text">Click en la imagen para eliminar</p>
+          </div>
+
+          <div class="image-grid">
+            <div *ngFor="let img of blobs; let i = index" class="image-container">
+              <img [src]="img.blob" 
+                   [alt]="'Imagen ' + (i + 1)" 
+                   (click)="eliminarImg(i)"
+                   class="preview-image">
+              <button mat-icon-button 
+                      color="warn" 
+                      class="delete-button"
+                      (click)="eliminarImg(i)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </mat-dialog-content>
     
-    
-  <mat-dialog-actions align="end">
+    <mat-dialog-actions align="end">
       <button mat-button (click)="onCancel()">Cancelar</button>
       <button mat-raised-button color="primary" 
               [disabled]="productForm.invalid || loading" 
@@ -147,8 +179,63 @@ interface DialogData {
       margin-bottom: 16px;
     }
     
-    .image-section {
+    .image-upload-section {
+      margin: 20px 0;
+    }
+
+    .image-input {
+      display: flex;
+      justify-content: center;
       margin-bottom: 16px;
+    }
+
+    .image-info {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .hint-text {
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 0.85em;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .image-container {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .image-container:hover {
+      transform: scale(1.02);
+    }
+
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    .delete-button {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .delete-button:hover {
+      background-color: #f44336;
+      color: white;
     }
     
     @media (max-width: 600px) {
@@ -166,6 +253,9 @@ interface DialogData {
 export class ProductFormDialogComponent implements OnInit {
   productForm: FormGroup;
   loading = false;
+  imagenesProducto: File[] = [];
+  blobs: { id: string; blob: string | ArrayBuffer }[] = [];
+  @ViewChild('fileInput') fileInput!: ElementRef;
 
   constructor(
     private fb: FormBuilder,
@@ -180,8 +270,7 @@ export class ProductFormDialogComponent implements OnInit {
       price: [0, [Validators.required, Validators.min(0.01)]],
       stock: [0, [Validators.required, Validators.min(0)]],
       categoryId: ['', [Validators.required]],
-      featured: [false],
-      image: ['', [Validators.required]]
+      featured: [false]
     });
   }
 
@@ -193,8 +282,7 @@ export class ProductFormDialogComponent implements OnInit {
         price: this.data.product.price,
         stock: this.data.product.stock,
         categoryId: this.data.product.categoryId,
-        featured: this.data.product.featured,
-        image: this.data.product.image || ''
+        featured: this.data.product.featured
       });
     }
   }
@@ -203,23 +291,57 @@ export class ProductFormDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
+  cargarImg(e: FileList | any) {
+    let imagenes = e.target.files;
+    for (const i in imagenes) {
+      if (!isNaN(Number(i))) {
+        let reader = new FileReader();
+        let url = reader.readAsDataURL(imagenes[i]);
+        reader.onloadend = () => {
+          if (reader.result && !this.blobs.some(b => b.blob === reader.result))
+            this.blobs.push({
+              id: i,
+              blob: reader.result,
+            });
+        };  
+        if (
+          !this.imagenesProducto
+            .map((img) => img.name)
+            .includes(imagenes[i].name)
+        ){
+          this.imagenesProducto.push(imagenes[i]);
+        }
+      }
+    }
+    this.fileInput.nativeElement.value = '';
+  }
+
+  eliminarImg(id: number) {
+    this.imagenesProducto.splice(id, 1);
+    this.blobs.splice(id, 1);
+  }
+
   onSave(): void {
-    if (this.productForm.valid) {
+    if (this.productForm.valid && this.blobs.length > 0) {
       this.loading = true;
-      // Build a plain JSON payload so backend receives fields in req.body
-      const payload = {
-        name: this.productForm.value.name,
-        description: this.productForm.value.description,
-        price: Number(this.productForm.value.price),
-        stock: Number(this.productForm.value.stock),
-        categoryId: Number(this.productForm.value.categoryId),
-        featured: Boolean(this.productForm.value.featured),
-        image: this.productForm.value.image
-      };
+      const formData = new FormData();
+      
+      // Agregar datos básicos
+      formData.append('name', this.productForm.value.name);
+      formData.append('description', this.productForm.value.description);
+      formData.append('price', String(this.productForm.value.price));
+      formData.append('stock', String(this.productForm.value.stock));
+      formData.append('categoryId', String(this.productForm.value.categoryId));
+      formData.append('featured', String(this.productForm.value.featured));
+      
+      // Agregar imágenes
+      this.imagenesProducto.forEach((imagen) => {
+        formData.append('images', imagen);
+      });
 
       const request = this.data.product
-        ? this.productService.updateProduct(this.data.product.id, payload)
-        : this.productService.createProduct(payload);
+        ? this.productService.updateProduct(this.data.product.id, formData)
+        : this.productService.createProduct(formData);
 
       request.subscribe({
         next: (response) => {

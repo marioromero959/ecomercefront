@@ -197,14 +197,18 @@ export const getProduct = async (req: Request, res: Response) => {
  *         description: Server error
  */
 export const createProduct = async (req: AuthRequest, res: Response) => {
-  console.log("bodyyy",req);
   try {
-    const { name, description, price, stock, categoryId, featured ,image} = req.body;
+    const { name, description, price, stock, categoryId, featured, images } = req.body;
     
+    // Configurar los campos de imágenes
+    const imageUrls = Array.isArray(images) ? images : [];
+    const mainImage = imageUrls.length > 0 ? imageUrls[0] : null;
+
     const product = await Product.create({
       name,
       description,
-      image,
+      image: mainImage,
+      images: imageUrls,
       price: parseFloat(price),
       stock: parseInt(stock),
       categoryId: parseInt(categoryId),
@@ -282,16 +286,21 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price, stock, categoryId, featured,image } = req.body;
+    const { name, description, price, stock, categoryId, featured, images } = req.body;
 
     const product = await Product.findByPk(id);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    // Configurar los campos de imágenes
+    const imageUrls = Array.isArray(images) ? images : [];
+    const mainImage = imageUrls.length > 0 ? imageUrls[0] : product.image;
+
     await product.update({
       name: name || product.name,
-      image: image || product.image,
+      image: mainImage,
+      images: imageUrls.length > 0 ? imageUrls : (product.images || []),
       description: description || product.description,
       price: price ? parseFloat(price) : product.price,
       stock: stock ? parseInt(stock) : product.stock,

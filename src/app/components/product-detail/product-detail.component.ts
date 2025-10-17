@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
 import { AuthService } from '../../services/auth.service';
+import { GalleryComponent } from '../shared/gallery/gallery.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Product } from '../../models/interfaces';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -21,7 +22,25 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
 @Component({
   selector: 'app-product-detail',
   standalone:true,
-  imports: [MatProgressSpinnerModule, MatCardActions, MatCardSubtitle, MatCardTitle, MatCardHeader, MatCard, MatCardContent, MatIcon, MatButton, MatOption, MatSelect, MatLabel, MatFormField, MatChipsModule, MatChipListbox, RouterModule],
+  imports: [
+    MatProgressSpinnerModule, 
+    MatCardActions, 
+    MatCardSubtitle, 
+    MatCardTitle, 
+    MatCardHeader, 
+    MatCard, 
+    MatCardContent, 
+    MatIcon, 
+    MatButton, 
+    MatOption, 
+    MatSelect, 
+    MatLabel, 
+    MatFormField, 
+    MatChipsModule, 
+    MatChipListbox, 
+    RouterModule,
+    GalleryComponent
+  ],
   template: `
   @if(product){
     <div class="product-detail-container">
@@ -33,10 +52,9 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
       </div>
 
       <div class="product-detail-content">
-        <!-- Product Image -->
+        <!-- Product Gallery -->
         <div class="product-image-section">
-          <img [src]="product.image || 'assets/no-image.jpg'" 
-               [alt]="product.name" class="product-image">
+          <app-gallery [images]="productImages"></app-gallery>
         </div>
 
         <!-- Product Info -->
@@ -163,14 +181,9 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
       display: flex;
       justify-content: center;
       align-items: flex-start;
-    }
-    
-    .product-image {
       width: 100%;
-      max-width: 500px;
-      height: auto;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: 0 auto;
     }
     
     .product-info-card {
@@ -305,6 +318,7 @@ export class ProductDetailComponent implements OnInit {
   relatedProducts: Product[] = [];
   selectedQuantity = 1;
   loading = true;
+  productImages: string[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -333,6 +347,16 @@ export class ProductDetailComponent implements OnInit {
     this.productService.getProduct(id).subscribe({
       next: (response) => {
         this.product = response.product;
+        // Manejar las imágenes del producto
+        if (this.product.images && Array.isArray(this.product.images)) {
+          this.productImages = this.product.images;
+        } else if (this.product.image) {
+          // Si solo hay una imagen, la ponemos en un array
+          this.productImages = [this.product.image];
+        } else {
+          // Si no hay imágenes, usamos una imagen por defecto
+          this.productImages = ['assets/no-image.jpg'];
+        }
         this.loadRelatedProducts();
         this.loading = false;
       },

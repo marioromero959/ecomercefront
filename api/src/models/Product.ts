@@ -9,6 +9,7 @@ interface ProductAttributes {
   price: number;
   stock: number;
   image?: string;
+  images?: string[];
   categoryId: number;
   featured: boolean;
   createdAt?: Date;
@@ -24,6 +25,7 @@ export class Product extends Model<ProductAttributes, ProductCreationAttributes>
   public price!: number;
   public stock!: number;
   public image?: string;
+  public images?: string[];
   public categoryId!: number;
   public featured!: boolean;
   public readonly createdAt!: Date;
@@ -62,6 +64,12 @@ Product.init({
   image: {
     type: DataTypes.STRING(255),
     allowNull: true,
+  },
+  images: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: [],
+    field: 'images'
   },
   categoryId: {
     type: DataTypes.INTEGER,

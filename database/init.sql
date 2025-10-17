@@ -44,6 +44,7 @@ CREATE TABLE products (
     image VARCHAR(255),
     category_id INTEGER NOT NULL,
     featured BOOLEAN DEFAULT FALSE,
+    images JSONB DEFAULT '[]'::jsonb,
     created_at timestamptz DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamptz DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON UPDATE CASCADE

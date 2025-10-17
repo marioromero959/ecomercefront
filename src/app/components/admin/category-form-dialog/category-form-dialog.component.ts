@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, viewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -49,10 +49,44 @@ interface DialogData {
           <textarea matInput rows="4" formControlName="description"></textarea>
         </mat-form-field>
 
-        <mat-form-field class="full-width">
-          <mat-label>URL de Imagen</mat-label>
-          <input matInput formControlName="image" placeholder="https://...">
-        </mat-form-field>
+        <div class="image-upload-section">
+          <div class="image-input">
+            <input #fileInput 
+                   type="file" 
+                   (change)="cargarImg($event)" 
+                   accept=".png,.jpg,.jpeg" 
+                   multiple="multiple"
+                   [style.display]="'none'">
+            <button mat-raised-button 
+                    color="primary" 
+                    (click)="fileInput.click()"
+                    [disabled]="blobs.length >= 8">
+              <mat-icon>add_photo_alternate</mat-icon>
+              Agregar Imágenes
+            </button>
+          </div>
+          
+          <div class="image-info">
+            <p>Imágenes subidas: {{blobs.length}}/8</p>
+            <p *ngIf="blobs.length > 0" class="hint-text">Click en la imagen para eliminar</p>
+          </div>
+
+          <div class="image-grid">
+            <div *ngFor="let img of blobs; let i = index" class="image-container">
+              <img [src]="img.blob" 
+                   [alt]="'Imagen ' + (i + 1)" 
+                   (click)="eliminarImg(i)"
+                   class="preview-image">
+              <button mat-icon-button 
+                      color="warn" 
+                      class="delete-button"
+                      (click)="eliminarImg(i)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
       </form>
     </mat-dialog-content>
 
@@ -79,12 +113,75 @@ interface DialogData {
       width: 100%;
       margin-bottom: 16px;
     }
+
+    .image-upload-section {
+      margin: 20px 0;
+    }
+
+    .image-input {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .image-info {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .hint-text {
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 0.85em;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .image-container {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .image-container:hover {
+      transform: scale(1.02);
+    }
+
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    .delete-button {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .delete-button:hover {
+      background-color: #f44336;
+      color: white;
+    }
   `]
 })
 export class CategoryFormDialogComponent implements OnInit {
   categoryForm: FormGroup;
   loading = false;
+  imagenesProducto: File[] = [];
+  blobs: { id: string; blob: string | ArrayBuffer }[] = [];
+  fileInput = viewChild.required<ElementRef>('fileInput');
 
+  
   constructor(
     private fb: FormBuilder,
     private categoryService: CategoryService,
@@ -94,8 +191,7 @@ export class CategoryFormDialogComponent implements OnInit {
   ) {
     this.categoryForm = this.fb.group({
       name: ['', [Validators.required]],
-      description: [''],
-      image: ['', [Validators.required]]
+      description: ['']
     });
   }
 
@@ -113,10 +209,49 @@ export class CategoryFormDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
+    cargarImg(e:FileList | any) {
+    let imagenes = e.target.files;
+    for (const i in imagenes) {
+      if (!isNaN(Number(i))) {
+        let reader = new FileReader();
+        let url = reader.readAsDataURL(imagenes[i]);
+        reader.onloadend = () => {
+          if (reader.result && !this.blobs.some(b => b.blob === reader.result))
+            this.blobs.push({
+              id: i,
+              blob: reader.result,
+            });
+        };  
+        if (
+          !this.imagenesProducto
+            .map((img) => img.name)
+            .includes(imagenes[i].name)
+        ){
+          this.imagenesProducto.push(imagenes[i]);
+        }
+      }
+    }
+    this.fileInput().nativeElement.value = '';
+  }
+
+  eliminarImg(id:number) {
+    this.imagenesProducto.splice(id, 1);
+    this.blobs.splice(id, 1);
+  }
+
   onSave(): void {
-    if (this.categoryForm.valid) {
+    if (this.categoryForm.valid && this.blobs.length > 0) {
       this.loading = true;
-      const formData = this.categoryForm.value;
+      const formData = new FormData();
+      
+      // Agregar datos básicos
+      formData.append('name', this.categoryForm.get('name')?.value);
+      formData.append('description', this.categoryForm.get('description')?.value);
+      
+      // Agregar imágenes
+      this.imagenesProducto.forEach((imagen, index) => {
+        formData.append('images', imagen);
+      });
 
       const request = this.data.category 
         ? this.categoryService.updateCategory(this.data.category.id, formData)
