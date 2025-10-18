@@ -5,7 +5,8 @@ import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
 import { AuthService } from '../../services/auth.service';
 import { LoadingService } from '../../services/loading.service';
-import { GalleryComponent } from '../shared/gallery/gallery.component';
+
+import { FullscreenGalleryComponent } from '../shared/fullscreen-gallery/fullscreen-gallery.component';
 import { ProductDetailSkeletonComponent } from './product-detail-skeleton.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Product } from '../../models/interfaces';
@@ -42,15 +43,25 @@ import { CarouselModule, OwlOptions } from 'ngx-owl-carousel-o';
     MatChipsModule, 
     MatChipListbox, 
     RouterModule,
-    GalleryComponent,
+
     ProductDetailSkeletonComponent,
-    CarouselModule
+    CarouselModule,
+    FullscreenGalleryComponent
   ],
   template: `
   @if(isLoading()) {
     <app-product-detail-skeleton />
   } @else if(product) {
     <div class="product-detail-container">
+      <!-- Fullscreen Gallery -->
+      @if(showFullscreenGallery){
+        <app-fullscreen-gallery
+          [images]="productImages"
+          [visible]="showFullscreenGallery"
+          (closeGallery)="showFullscreenGallery = false">
+        </app-fullscreen-gallery>
+      }
+      
       <div class="breadcrumb">
         <button mat-button routerLink="/products">
           <mat-icon>arrow_back</mat-icon>
@@ -60,8 +71,24 @@ import { CarouselModule, OwlOptions } from 'ngx-owl-carousel-o';
 
       <div class="product-detail-content">
         <!-- Product Gallery -->
-        <div class="product-image-section">
-          <app-gallery [images]="productImages"></app-gallery>
+        <div class="product-gallery">
+          <!-- Main Image -->
+          <div class="main-image-container" (click)="showFullscreenGallery = true">
+            <img [src]="productImages[currentImageIndex]" [alt]="'Imagen principal'" class="main-image">
+          </div>
+          
+          <!-- Thumbnails -->
+          @if(productImages.length > 1){
+            <div class="thumbnails-container">
+              @for(image of productImages; track image; let i = $index){
+                <div class="thumbnail" 
+                     [class.active]="i === currentImageIndex"
+                     (click)="selectImage(i)">
+                  <img [src]="image" [alt]="'Miniatura ' + (i + 1)">
+                </div>
+              }
+            </div>
+          }
         </div>
 
         <!-- Product Info -->
@@ -72,7 +99,9 @@ import { CarouselModule, OwlOptions } from 'ngx-owl-carousel-o';
               <mat-card-subtitle>
                 <mat-chip-listbox>
                   <mat-chip color="primary" selected>{{product.Category?.name}}</mat-chip>
-                  <mat-chip *ngIf="product.featured" color="accent" selected>Destacado</mat-chip>
+                @if(product.featured){
+                  <mat-chip color="accent" selected>Destacado</mat-chip>
+                }
                 </mat-chip-listbox>
               </mat-card-subtitle>
             </mat-card-header>
@@ -96,10 +125,10 @@ import { CarouselModule, OwlOptions } from 'ngx-owl-carousel-o';
                   <mat-label>Cantidad</mat-label>
                   <mat-select [(value)]="selectedQuantity">
                   @for(qty of getQuantityOptions(); track qty){
-                    <mat-option>
-                    {{qty}}
+                    <mat-option [value]="qty">
+                      {{qty}}
                     </mat-option>
-                    }
+                  }
                   </mat-select>
                 </mat-form-field>
               </div>
@@ -182,13 +211,77 @@ import { CarouselModule, OwlOptions } from 'ngx-owl-carousel-o';
       margin-bottom: 60px;
     }
     
-    .product-image-section {
+    .product-gallery {
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      gap: 1rem;
       width: 100%;
       max-width: 600px;
       margin: 0 auto;
+    }
+
+    .main-image-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .main-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .thumbnails-container {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding: 0.5rem;
+      scrollbar-width: thin;
+
+      &::-webkit-scrollbar {
+        height: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+      }
+    }
+
+    .thumbnail {
+      flex: 0 0 80px;
+      height: 80px;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+
+      &:hover {
+        opacity: 0.9;
+      }
+
+      &.active {
+        opacity: 1;
+        border-color: #673ab7;
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
     }
     
     .product-info-card {
@@ -364,6 +457,12 @@ export class ProductDetailComponent implements OnInit {
   selectedQuantity = 1;
   isLoading = signal(true);
   productImages: string[] = [];
+  showFullscreenGallery = false;
+  currentImageIndex = 0;
+
+  selectImage(index: number): void {
+    this.currentImageIndex = index;
+  }
 
   relatedProductsOptions: OwlOptions = {
     loop: true,
