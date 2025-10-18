@@ -3,7 +3,9 @@ version: '3.8'
 services:
   # Base de datos PostgreSQL
   database:
-    image: postgres:15-alpine
+    build:
+      context: ./database
+      dockerfile: Dockerfile
     container_name: ecommerce_postgres
     restart: unless-stopped
     ports:
@@ -15,7 +17,6 @@ services:
       - PGUSER=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database:/docker-entrypoint-initdb.d
     command: postgres -c 'max_connections=50'
     networks:
       - ecommerce_network
@@ -24,7 +25,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
   # Backend API Node.js
   backend:
