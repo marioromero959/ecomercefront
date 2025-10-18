@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../services/category.service';
@@ -7,11 +7,24 @@ import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardSubtitle
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { DecimalPipe, SlicePipe } from '@angular/common';
+import { ProductSkeletonComponent } from '../shared/product-skeleton/product-skeleton.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [MatCardActions, MatCardTitle, MatCardHeader, MatCard, MatCardContent, MatCardSubtitle, MatButton, MatIcon, RouterModule, DecimalPipe],
+  imports: [
+    MatCardActions, 
+    MatCardTitle, 
+    MatCardHeader, 
+    MatCard, 
+    MatCardContent, 
+    MatCardSubtitle, 
+    MatButton, 
+    MatIcon, 
+    RouterModule, 
+    DecimalPipe,
+    ProductSkeletonComponent
+  ],
   template: `
     <div class="home-container">
       <!-- Hero Section -->
@@ -41,7 +54,13 @@ import { DecimalPipe, SlicePipe } from '@angular/common';
       <!-- Featured Products -->
       <section class="featured-section compact-featured">
         <h2>Productos Destacados</h2>
-        @if(featuredProducts.length > 0){ 
+        @if(loading) {
+          <div class="products-grid compact-grid">
+            @for(item of [1,2,3,4,5,6,7,8]; track $index) {
+              <app-product-skeleton />
+            }
+          </div>
+        } @else if(featuredProducts.length > 0) { 
         <div class="products-grid compact-grid">
         @for(product of featuredProducts;track product.id){
           <mat-card class="product-card compact-card">
@@ -291,6 +310,8 @@ import { DecimalPipe, SlicePipe } from '@angular/common';
 export class HomeComponent implements OnInit {
   featuredProducts: Product[] = [];
   categories: Category[] = [];
+  private loadingSignal = signal(false);
+  get loading(): boolean { return this.loadingSignal(); }
 
   constructor(
     private productService: ProductService,
@@ -303,12 +324,15 @@ export class HomeComponent implements OnInit {
   }
 
   loadFeaturedProducts(): void {
+    this.loadingSignal.set(true);
     this.productService.getProducts({ featured: true, limit: 8 }).subscribe({
       next: (response) => {
         this.featuredProducts = response.products || [];
+        this.loadingSignal.set(false);
       },
       error: (error) => {
         console.error('Error loading featured products:', error);
+        this.loadingSignal.set(false);
       }
     });
   }

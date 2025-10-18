@@ -1,10 +1,12 @@
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
 import { AuthService } from '../../services/auth.service';
+import { LoadingService } from '../../services/loading.service';
 import { GalleryComponent } from '../shared/gallery/gallery.component';
+import { ProductDetailSkeletonComponent } from './product-detail-skeleton.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Product } from '../../models/interfaces';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -39,10 +41,13 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
     MatChipsModule, 
     MatChipListbox, 
     RouterModule,
-    GalleryComponent
+    GalleryComponent,
+    ProductDetailSkeletonComponent
   ],
   template: `
-  @if(product){
+  @if(isLoading()) {
+    <app-product-detail-skeleton />
+  } @else if(product) {
     <div class="product-detail-container">
       <div class="breadcrumb">
         <button mat-button routerLink="/products">
@@ -151,11 +156,7 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
       }
     </div>
 
-    @if(loading){
-      <div class="loading-container">
-      <mat-spinner></mat-spinner>
-      </div>
-      }
+    
   }
 
   `,
@@ -317,7 +318,7 @@ export class ProductDetailComponent implements OnInit {
   product: Product | null = null;
   relatedProducts: Product[] = [];
   selectedQuantity = 1;
-  loading = true;
+  isLoading = signal(true);
   productImages: string[] = [];
 
   constructor(
@@ -326,6 +327,7 @@ export class ProductDetailComponent implements OnInit {
     private productService: ProductService,
     private cartService: CartService,
     private authService: AuthService,
+    private loadingService: LoadingService,
     private snackBar: MatSnackBar
   ) {}
 
@@ -343,7 +345,9 @@ export class ProductDetailComponent implements OnInit {
   }
 
   loadProduct(id: number): void {
-    this.loading = true;
+    this.isLoading.set(true);
+    this.loadingService.show();
+
     this.productService.getProduct(id).subscribe({
       next: (response) => {
         this.product = response.product;
@@ -358,11 +362,13 @@ export class ProductDetailComponent implements OnInit {
           this.productImages = ['assets/no-image.jpg'];
         }
         this.loadRelatedProducts();
-        this.loading = false;
+        this.isLoading.set(false);
+        this.loadingService.hide();
       },
       error: (error) => {
         console.error('Error loading product:', error);
-        this.loading = false;
+        this.isLoading.set(false);
+        this.loadingService.hide();
         this.router.navigate(['/products']);
       }
     });

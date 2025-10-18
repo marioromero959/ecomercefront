@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { tap, map, catchError } from 'rxjs/operators';
 import { User, AuthResponse } from '../models/interfaces';
 import { environment } from '../../environments/environment';
 
@@ -66,13 +66,25 @@ export class AuthService {
     return this.http.put<{ message: string }>(`${this.API_URL}/change-password`, passwordData);
   }
 
-  checkAuthStatus(): void {
+  checkAuthStatus(): Observable<boolean> {
     const token = localStorage.getItem('token');
-    if (token) {
-      this.getProfile().subscribe({
-        error: () => this.logout()
-      });
+    if (!token) {
+      return of(false);
     }
+
+    return this.getProfile().pipe(
+      map(response => {
+        if (response?.user) {
+          this.currentUserSubject.next(response.user);
+          return true;
+        }
+        return false;
+      }),
+      catchError(() => {
+        this.logout();
+        return of(false);
+      })
+    );
   }
 
   isAuthenticated(): boolean {

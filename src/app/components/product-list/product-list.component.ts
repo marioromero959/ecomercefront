@@ -17,11 +17,30 @@ import { MatInput } from '@angular/material/input';
 import { MatSelect, MatOption } from '@angular/material/select';
 import { SlicePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ProductSkeletonComponent } from '../shared/product-skeleton/product-skeleton.component';
 
 @Component({
   selector: 'app-product-list',
   standalone:true,
-  imports: [MatPaginator, MatIcon, MatCardActions, MatCardContent, MatCardSubtitle, MatCardTitle, MatCardHeader, MatCard, MatButton, MatOption, MatSelect, MatFormField, MatLabel, MatInput, SlicePipe, ReactiveFormsModule],
+  imports: [
+    MatPaginator, 
+    MatIcon, 
+    MatCardActions, 
+    MatCardContent, 
+    MatCardSubtitle, 
+    MatCardTitle, 
+    MatCardHeader, 
+    MatCard, 
+    MatButton, 
+    MatOption, 
+    MatSelect, 
+    MatFormField, 
+    MatLabel, 
+    MatInput, 
+    SlicePipe, 
+    ReactiveFormsModule,
+    ProductSkeletonComponent
+  ],
   template: `
     <div class="product-list-container">
       <!-- Filters -->
@@ -56,10 +75,16 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
       <!-- Products Grid -->
       <div class="products-section">
         <div class="products-header">
-          <h2>Productos ({{totalProducts}})</h2>
+          <h2>Productos ({{loading ? '...' : totalProducts}})</h2>
         </div>
 
-        @if(products.length > 0){
+        @if(loading) {
+          <div class="products-grid">
+            @for(item of [1,2,3,4,5,6,7,8,9,10,11,12]; track $index) {
+              <app-product-skeleton />
+            }
+          </div>
+        } @else if(products.length > 0) {
           <div class="products-grid">
           @for(product of products;track product.id){
             <mat-card class="product-card">
@@ -339,7 +364,8 @@ export class ProductListComponent implements OnInit {
   pageSize = 12;
   totalProducts = 0;
   totalPages = 0;
-  loading = false;
+  private loadingSignal = signal(false);
+  get loading(): boolean { return this.loadingSignal(); }
 
   constructor(
     private productService: ProductService,
@@ -388,7 +414,7 @@ export class ProductListComponent implements OnInit {
   }
 
   loadProducts(): void {
-    this.loading = true;
+    this.loadingSignal.set(true);
     const filters = {
       page: this.currentPage,
       limit: this.pageSize,
@@ -401,11 +427,11 @@ export class ProductListComponent implements OnInit {
         this.productsSignal.set(response.products);
         this.totalProducts = response.totalProducts;
         this.totalPages = response.totalPages;
-        this.loading = false;
+        this.loadingSignal.set(false);
       },
       error: (error) => {
         console.error('Error loading products:', error);
-        this.loading = false;
+        this.loadingSignal.set(false);
       }
     });
   }

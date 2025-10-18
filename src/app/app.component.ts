@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
 import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
+import { LoadingComponent } from './components/shared/loading/loading.component';
 
 @Component({
   selector: 'app-root',
@@ -13,7 +14,8 @@ import { FooterComponent } from './components/footer/footer.component';
     CommonModule,
     RouterOutlet,
     HeaderComponent,
-    FooterComponent
+    FooterComponent,
+    LoadingComponent
   ],
   template: `
     <div class="app-container">
@@ -22,6 +24,7 @@ import { FooterComponent } from './components/footer/footer.component';
         <router-outlet></router-outlet>
       </main>
       <app-footer></app-footer>
+      <app-loading></app-loading>
     </div>
   `,
   styles: [`
@@ -50,6 +53,9 @@ export class AppComponent implements OnInit {
   constructor(private authService: AuthService) {}
 
   ngOnInit() {
-    this.authService.checkAuthStatus();
+    const token = localStorage.getItem('token');
+    if (token) {
+      this.authService.checkAuthStatus().subscribe();
+    }
   }
 }

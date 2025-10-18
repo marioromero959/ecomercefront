@@ -1,18 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { Observable } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
 import { User } from '../../models/interfaces';
-import { CommonModule, AsyncPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'app-header',
@@ -20,7 +17,6 @@ import { MatInputModule } from '@angular/material/input';
   imports: [
     CommonModule,
     RouterModule,
-    AsyncPipe,
     MatIconModule,
     MatDividerModule,
     MatMenuModule,
@@ -44,20 +40,20 @@ import { MatInputModule } from '@angular/material/input';
           <button mat-button routerLink="/">Inicio</button>
           <button mat-button routerLink="/products">Productos</button>
         </div>
-        
-        <!-- Search removed per request -->
 
         <div class="user-actions">
-          <!-- Cart: muestra solo si hay usuario autenticado -->
-          <ng-container *ngIf="currentUser$ | async as currentUser">
+          <!-- Cart y menú de usuario: muestra solo si hay usuario autenticado -->
+          @if (currentUser()) {
             <button mat-icon-button routerLink="/cart">
-              <mat-icon [matBadge]="cartItemCount" matBadgeColor="warn" [matBadgeHidden]="cartItemCount === 0">shopping_cart</mat-icon>
+              <mat-icon [matBadge]="cartItemCount()" matBadgeColor="warn" [matBadgeHidden]="cartItemCount() === 0">
+                shopping_cart
+              </mat-icon>
             </button>
 
             <!-- User Menu -->
             <button mat-button [matMenuTriggerFor]="userMenu">
               <mat-icon>account_circle</mat-icon>
-              {{currentUser.firstName}}
+              {{currentUser()?.firstName}}
             </button>
 
             <mat-menu #userMenu="matMenu">
@@ -69,27 +65,24 @@ import { MatInputModule } from '@angular/material/input';
                 <mat-icon>lock_reset</mat-icon>
                 Cambiar Contraseña
               </button>
-              <ng-container *ngIf="currentUser.role === 'admin'">
+              @if (currentUser()?.role === 'admin') {
                 <button mat-menu-item routerLink="/admin">
                   <mat-icon>admin_panel_settings</mat-icon>
                   Admin
                 </button>
-              </ng-container>
+              }
               <mat-divider></mat-divider>
               <button mat-menu-item (click)="logout()">
                 <mat-icon>logout</mat-icon>
                 Cerrar Sesión
               </button>
             </mat-menu>
-          </ng-container>
-
-          <!-- Si no hay usuario, muestra botones de auth -->
-          <ng-container *ngIf="!(currentUser$ | async)">
+          } @else {
             <div>
-              <button mat-button routerLink="/login">Iniciar Sesi3n</button>
+              <button mat-button routerLink="/login">Iniciar Sesión</button>
               <button mat-raised-button color="accent" routerLink="/register">Registrarse</button>
             </div>
-          </ng-container>
+          }
         </div>
       </div>
     </mat-toolbar>
@@ -165,40 +158,36 @@ import { MatInputModule } from '@angular/material/input';
     }
   `]
 })
-export class HeaderComponent implements OnInit {
-  currentUser$: Observable<User | null>;
-  cartItemCount = 0;
-  // search removed
+export class HeaderComponent {
+  currentUser = signal<User | null>(null);
+  cartItemCount = signal<number>(0);
 
   constructor(
     private authService: AuthService,
     private cartService: CartService,
     private router: Router
   ) {
-    this.currentUser$ = this.authService.currentUser$;
-  }
-
-  ngOnInit(): void {
-    this.cartService.cartItemCount$.subscribe(count => {
-      this.cartItemCount = count;
+    // Efecto para sincronizar el usuario actual
+    effect(() => {
+      this.authService.currentUser$.subscribe(user => {
+        this.currentUser.set(user);
+        if (user) {
+          // Cargar el carrito cuando el usuario está autenticado
+          this.cartService.getCart().subscribe();
+        }
+      });
     });
 
-    // Load cart if user is authenticated
-    this.currentUser$.subscribe(user => {
-      if (user) {
-        this.cartService.getCart().subscribe();
-      }
+    // Efecto para sincronizar el contador del carrito
+    effect(() => {
+      this.cartService.cartItemCount$.subscribe(count => {
+        this.cartItemCount.set(count);
+      });
     });
-
-    // search removed
   }
 
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/']);
-  }
-
-  onSearch(query: string): void {
-    // search removed
   }
 }
