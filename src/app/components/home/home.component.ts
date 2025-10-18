@@ -8,6 +8,7 @@ import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { DecimalPipe, SlicePipe } from '@angular/common';
 import { ProductSkeletonComponent } from '../shared/product-skeleton/product-skeleton.component';
+import { CarouselModule, OwlOptions } from 'ngx-owl-carousel-o';
 
 @Component({
   selector: 'app-home',
@@ -23,19 +24,29 @@ import { ProductSkeletonComponent } from '../shared/product-skeleton/product-ske
     MatIcon, 
     RouterModule, 
     DecimalPipe,
-    ProductSkeletonComponent
+    ProductSkeletonComponent,
+    CarouselModule
   ],
   template: `
     <div class="home-container">
-      <!-- Hero Section -->
-      <section class="hero-section">
-        <div class="hero-content">
-          <h1>Bienvenido a nuestro E-Commerce</h1>
-          <p>Encuentra los mejores productos al mejor precio</p>
-          <button mat-raised-button color="tertiary" routerLink="/products">
-            Ver Productos
-          </button>
-          </div>
+      <!-- Banner Carousel -->
+      <section class="banner-section">
+        <owl-carousel-o [options]="bannerOptions">
+          @for(image of bannerImages; track $index) {
+            <ng-template carouselSlide>
+              <div class="banner-slide">
+                <img [src]="image" alt="Banner {{$index + 1}}">
+                <div class="banner-content">
+                  <h1>Bienvenido a nuestro E-Commerce</h1>
+                  <p>Encuentra los mejores productos al mejor precio</p>
+                  <button mat-raised-button color="tertiary" routerLink="/products">
+                    Ver Productos
+                  </button>
+                </div>
+              </div>
+            </ng-template>
+          }
+        </owl-carousel-o>
       </section>
 
       <!-- Categories Section (minimal) -->
@@ -61,26 +72,28 @@ import { ProductSkeletonComponent } from '../shared/product-skeleton/product-ske
             }
           </div>
         } @else if(featuredProducts.length > 0) { 
-        <div class="products-grid compact-grid">
-        @for(product of featuredProducts;track product.id){
-          <mat-card class="product-card compact-card">
-            <img mat-card-image [src]="product.image || 'assets/no-image.jpg'" 
-                 [alt]="product.name" class="product-image compact-image">
-            <mat-card-header>
-              <mat-card-title>{{product.name}}</mat-card-title>
-              <mat-card-subtitle>\${{product.price | number}}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <p>{{product.description}}</p>
-            </mat-card-content>
-            <mat-card-actions>
-              <button mat-button color="primary" (click)="viewProduct(product.id)">
-                Ver Detalles
-              </button>
-            </mat-card-actions>
-          </mat-card>
+        <owl-carousel-o [options]="productOptions">
+          @for(product of featuredProducts;track product.id){
+            <ng-template carouselSlide>
+              <mat-card class="product-card compact-card">
+                <img mat-card-image [src]="product.image || 'assets/no-image.jpg'" 
+                     [alt]="product.name" class="product-image compact-image">
+                <mat-card-header>
+                  <mat-card-title>{{product.name}}</mat-card-title>
+                  <mat-card-subtitle>\${{product.price | number}}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <p>{{product.description}}</p>
+                </mat-card-content>
+                <mat-card-actions>
+                  <button mat-button color="primary" (click)="viewProduct(product.id)">
+                    Ver Detalles
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </ng-template>
           }
-        </div>
+        </owl-carousel-o>
         }@else{
         <div class="no-products-container">
           <div class="no-featured-products">
@@ -99,31 +112,85 @@ import { ProductSkeletonComponent } from '../shared/product-skeleton/product-ske
   `,
   styles: [`
     .home-container {
-      max-width: 1200px;
+      max-width: 100%;
       margin: 0 auto;
-      padding: 0 20px;
     }
 
-    /* Hero */
-    .hero-section {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 80px 40px;
-      border-radius: 12px;
-      text-align: center;
+    /* Banner Carousel */
+    .banner-section {
       margin-bottom: 60px;
+      position: relative;
     }
 
-    .hero-content h1 {
+    .banner-slide {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      overflow: hidden;
+    }
+
+    .banner-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .banner-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+      z-index: 2;
+      width: 100%;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .banner-content h1 {
       font-size: 3rem;
       margin-bottom: 20px;
       font-weight: 300;
     }
 
-    .hero-content p {
+    .banner-content p {
       font-size: 1.2rem;
       margin-bottom: 30px;
       opacity: 0.9;
+    }
+
+    ::ng-deep .owl-theme .owl-nav {
+      margin-top: 10px;
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      transform: translateY(-50%);
+    }
+
+    ::ng-deep .owl-theme .owl-nav [class*='owl-'] {
+      color: #FFF;
+      font-size: 14px;
+      margin: 5px;
+      padding: 4px 7px;
+      background: #764ba2;
+      display: inline-block;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    ::ng-deep .owl-prev, ::ng-deep .owl-next {
+      position: absolute;
+      height: 100%;
+      top: 0;
+    }
+
+    ::ng-deep .owl-prev {
+      left: 0;
+    }
+
+    ::ng-deep .owl-next {
+      right: 0;
     }
 
     .outlined-hero { background: transparent; }
@@ -252,9 +319,25 @@ import { ProductSkeletonComponent } from '../shared/product-skeleton/product-ske
 
     .compact-featured { margin-top: 18px; }
     .compact-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(clamp(180px, 22%, 300px),1fr)); gap:12px; align-items:start; }
-    .compact-card { padding:10px; min-height: 360px; display:flex; flex-direction:column; }
+    .compact-card { 
+      padding: 15px; 
+      min-height: 360px; 
+      display: flex; 
+      flex-direction: column;
+      margin: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
     /* Show full image without cropping for featured cards */
-    .compact-image { height:200px; object-fit:contain; background: #fff; border-radius:6px; }
+    .compact-image { 
+      height: 200px; 
+      width: calc(100% + 30px); /* Compensar el padding de la card */
+      margin: -15px -15px 0; /* Compensar el padding de la card */
+      object-fit: contain; 
+      background: #fff;
+      padding: 10px; 
+    }
 
     .product-card mat-card-title,
     .compact-card mat-card-title {
@@ -312,6 +395,54 @@ export class HomeComponent implements OnInit {
   categories: Category[] = [];
   private loadingSignal = signal(false);
   get loading(): boolean { return this.loadingSignal(); }
+
+  bannerImages = [
+    'https://www.shutterstock.com/image-vector/digital-marketing-agency-social-media-600nw-2405501885.jpg',
+    'https://www.shutterstock.com/image-vector/digital-marketing-agency-social-media-600nw-2405501885.jpg',
+    'https://www.shutterstock.com/image-vector/digital-marketing-agency-social-media-600nw-2405501885.jpg'
+  ];
+
+  bannerOptions: OwlOptions = {
+    loop: true,
+    mouseDrag: true,
+    touchDrag: true,
+    pullDrag: false,
+    dots: true,
+    navSpeed: 700,
+    responsive: {
+      0: {
+        items: 1
+      }
+    },
+    autoplay: true,
+    autoplayTimeout: 5000
+  };
+
+  productOptions: OwlOptions = {
+    loop: true,
+    mouseDrag: true,
+    touchDrag: true,
+    pullDrag: false,
+    dots: true,
+    navSpeed: 500,
+    responsive: {
+      0: {
+        items: 1
+      },
+      400: {
+        items: 2
+      },
+      740: {
+        items: 3
+      },
+      940: {
+        items: 4
+      }
+    },
+    margin: 30,
+    autoplay: true,
+    autoplayTimeout: 2000
+  };
 
   constructor(
     private productService: ProductService,

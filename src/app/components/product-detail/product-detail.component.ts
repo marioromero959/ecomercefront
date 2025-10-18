@@ -20,6 +20,7 @@ import { MatSelect } from '@angular/material/select';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips';
+import { CarouselModule, OwlOptions } from 'ngx-owl-carousel-o';
 
 @Component({
   selector: 'app-product-detail',
@@ -42,7 +43,8 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
     MatChipListbox, 
     RouterModule,
     GalleryComponent,
-    ProductDetailSkeletonComponent
+    ProductDetailSkeletonComponent,
+    CarouselModule
   ],
   template: `
   @if(isLoading()) {
@@ -134,24 +136,26 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
       <!-- Related Products -->
       @if(relatedProducts.length > 0){
       <div class="related-products-section">
-        <h3>Productos Relacionados</h3>
-        <div class="related-products-grid">
-        @for(relatedProduct of relatedProducts;track relatedProduct.id){
-          <mat-card class="related-product-card">
-            <img mat-card-image [src]="relatedProduct.image || 'assets/no-image.jpg'" 
-                 [alt]="relatedProduct.name" class="related-product-image">
-            <mat-card-header>
-              <mat-card-title>{{relatedProduct.name}}</mat-card-title>
-              <mat-card-subtitle>\${{relatedProduct.price}}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-actions>
-              <button mat-button color="primary" [routerLink]="['/products', relatedProduct.id]">
-                Ver Producto
-              </button>
-            </mat-card-actions>
-          </mat-card>
+        <h3>Productos que te pueden interesar</h3>
+        <owl-carousel-o [options]="relatedProductsOptions">
+          @for(relatedProduct of relatedProducts; track relatedProduct.id) {
+            <ng-template carouselSlide>
+              <mat-card class="related-product-card">
+                <img mat-card-image [src]="relatedProduct.image || 'assets/no-image.jpg'" 
+                    [alt]="relatedProduct.name" class="related-product-image">
+                <mat-card-header>
+                  <mat-card-title>{{relatedProduct.name}}</mat-card-title>
+                  <mat-card-subtitle>\${{relatedProduct.price}}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-actions>
+                  <button mat-button color="primary" [routerLink]="['/products', relatedProduct.id]">
+                    Ver Producto
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </ng-template>
           }
-        </div>
+        </owl-carousel-o>
       </div>
       }
     </div>
@@ -266,17 +270,13 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
     
     .related-products-section h3 {
       margin-bottom: 24px;
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       color: #333;
-    }
-    
-    .related-products-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
+      font-weight: 400;
     }
     
     .related-product-card {
+      margin: 10px;
       transition: transform 0.3s;
     }
     
@@ -296,6 +296,44 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
       height: 50vh;
     }
     
+    ::ng-deep .owl-nav {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      transform: translateY(-50%);
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      
+      button {
+        pointer-events: all;
+        width: 40px;
+        height: 40px;
+        border-radius: 50% !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        color: #333 !important;
+        
+        &:hover {
+          background: white !important;
+          color: #1976d2 !important;
+        }
+        
+        span {
+          font-size: 1.5rem;
+          line-height: 1;
+        }
+      }
+      
+      .owl-prev {
+        margin-left: -20px;
+      }
+      
+      .owl-next {
+        margin-right: -20px;
+      }
+    }
+    
     @media (max-width: 768px) {
       .product-detail-content {
         grid-template-columns: 1fr;
@@ -308,8 +346,14 @@ import { MatChip, MatChipListbox, MatChipsModule } from '@angular/material/chips
         text-align: center;
       }
       
-      .related-products-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      ::ng-deep .owl-nav {
+        .owl-prev {
+          margin-left: -10px;
+        }
+        
+        .owl-next {
+          margin-right: -10px;
+        }
       }
     }
   `]
@@ -320,6 +364,31 @@ export class ProductDetailComponent implements OnInit {
   selectedQuantity = 1;
   isLoading = signal(true);
   productImages: string[] = [];
+
+  relatedProductsOptions: OwlOptions = {
+    loop: true,
+    mouseDrag: true,
+    touchDrag: true,
+    pullDrag: false,
+    dots: false,
+    navSpeed: 700,
+    navText: ['<i class="fas fa-chevron-left"></i>', '<i class="fas fa-chevron-right"></i>'],
+    responsive: {
+      0: {
+        items: 1
+      },
+      576: {
+        items: 2
+      },
+      768: {
+        items: 3
+      },
+      992: {
+        items: 4
+      }
+    },
+    nav: true
+  };
 
   constructor(
     private route: ActivatedRoute,
